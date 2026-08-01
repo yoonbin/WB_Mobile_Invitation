@@ -5,31 +5,28 @@
 
 /* ---------- 토큰 ---------- */
 :root {
-  --paper:      #F0F2ED;   /* 온실 유리에 비친 오프화이트 */
-  --paper-tint: #E6EAE1;   /* 교차 섹션 */
-  --ink:        #232520;   /* 본문 강조   13.7:1 */
-  --ink-soft:   #5C6159;   /* 본문        5.2:1  */
-  --ink-faint:  #646961;   /* 보조 설명   4.6:1  — opacity 로 흐리지 말 것 */
-  --forest:     #2E4034;   /* 상록수      9.8:1  */
-  --gold:       #B99B6B;   /* 억새 — 선·마름모 등 장식 전용 (텍스트 금지) */
-  --gold-text:  #7E6236;   /* 억새 — 텍스트용 4.7:1 */
-  --camellia:   #8C2F39;   /* 동백 — 예식일에만 */
-  --line:       rgba(46, 64, 52, .18);
-  --line-soft:  rgba(46, 64, 52, .10);
-  --scrim:      rgba(26, 36, 29, .5);
-  --paper-rgb:  240, 242, 237;
-
-  /* 터치 타깃 최소 크기 — 하객 연령대를 고려한 하한선 */
-  --tap: 44px;
-
-  --display: 'Gowun Batang', 'Apple SD Gothic Neo', serif;
-  --body:    'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  --latin:   'Italiana', 'Gowun Batang', serif;
-
-  --page: 460px;
-  --gut: 26px;
-  --radius: 2px;
-  --ease: cubic-bezier(.22, .61, .36, 1);
+    --paper: #F0F2ED; /* 온실 유리에 비친 오프화이트 */
+    --paper-tint: #E6EAE1; /* 교차 섹션 */
+    --ink: #232520; /* 본문 강조   13.7:1 */
+    --ink-soft: #5C6159; /* 본문        5.2:1  */
+    --ink-faint: #646961; /* 보조 설명   4.6:1  — opacity 로 흐리지 말 것 */
+    --forest: #2E4034; /* 상록수      9.8:1  */
+    --gold: #B99B6B; /* 억새 — 선·마름모 등 장식 전용 (텍스트 금지) */
+    --gold-text: #7E6236; /* 억새 — 텍스트용 4.7:1 */
+    --camellia: #8C2F39; /* 동백 — 예식일에만 */
+    --line: rgba(46, 64, 52, .18);
+    --line-soft: rgba(46, 64, 52, .10);
+    --scrim: rgba(26, 36, 29, .5);
+    --paper-rgb: 240, 242, 237;
+    /* 터치 타깃 최소 크기 — 하객 연령대를 고려한 하한선 */
+    --tap: 44px;
+    --display: 'Noto Sans KR', 'Noto Sans KR', serif;
+    --body: 'Noto Sans KR', 'Noto Sans KR', sans-serif;
+    --latin: 'Noto Sans KR', 'Noto Sans KR', serif;
+    --page: 460px;
+    --gut: 26px;
+    --radius: 2px;
+    --ease: cubic-bezier(.22, .61, .36, 1);
 }
 
 /* ---------- 리셋 ---------- */
@@ -125,12 +122,12 @@ a { color: inherit; }
 }
 .cover__name { text-indent: .18em; }
 .cover__amp {
-  font-family: var(--latin);
-  font-size: 1.0625rem;
-  letter-spacing: .34em;
-  text-indent: .34em;
-  color: var(--gold-text);
-  text-transform: lowercase;
+    font-family: var(--latin);
+    font-size: 1.0625rem;    
+    letter-spacing: .34em;
+    text-indent: .34em;
+    color: var(--gold-text);
+    text-transform: lowercase;
 }
 .cover__date {
   margin: 26px 0 4px;

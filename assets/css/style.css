@@ -3,10 +3,47 @@
    컨셉: 제주 늦가을 유리온실 — 아치 창과 창살(mullion)
    ============================================================= */
 
+/* ---------- 이랜드 초이스체 (페이지 전체) ----------
+   출처: 눈누 https://noonnu.cc/font_page/502
+   라이선스: 이랜드리테일 — 개인·기업 무료, 수정·재배포 허용
+
+   세 굵기를 모두 받는다. 한 벌만 받으면 본문·달력 숫자까지 그 굵기로 나와
+   가는 획을 쓸 수 없다(Bold 만 받았을 때 페이지 전체가 굵어졌던 이유).
+     300 Light  — 본문, 달력 숫자
+     400 Medium — 기본
+     700 Bold   — 강조 문구, 표지
+   swap: 폰트를 기다리는 동안 글자가 사라져 있지 않게 한다. */
+@font-face {
+  font-family: 'ELAND Choice';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts-20-12@1.0/ELAND_Choice_L.woff') format('woff');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'ELAND Choice';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts-20-12@1.0/ELAND_Choice_M.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'ELAND Choice';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts-20-12@1.0/ELAND_Choice_B.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* ---------- 토큰 ---------- */
 :root {
-    --paper: #F0F2ED; /* 온실 유리에 비친 오프화이트 */
-    --paper-tint: #E6EAE1; /* 교차 섹션 */
+    --paper: #FFFFFF; /* 순백 */
+    /* 교차 섹션도 흰색 — 배경 전체를 흰색으로 통일했다.
+       섹션 구분은 넉넉한 위아래 여백(74px)과 각 섹션의 라벨·제목이 대신한다.
+       ★ 섹션마다 아주 옅은 색 차이를 다시 주고 싶으면 이 값만 #F7F8F7 로 바꾸면 된다
+         (.section--tint 클래스는 HTML 에 그대로 남겨 두었다).
+         다만 '마음 전하실 곳'이 숨겨져 있어 교차 순서가 한 번 어긋난다는 점은 감안할 것. */
+    --paper-tint: #FFFFFF;
     --ink: #232520; /* 본문 강조   13.7:1 */
     --ink-soft: #5C6159; /* 본문        5.2:1  */
     --ink-faint: #646961; /* 보조 설명   4.6:1  — opacity 로 흐리지 말 것 */
@@ -14,15 +51,25 @@
     --gold: #B99B6B; /* 억새 — 선·마름모 등 장식 전용 (텍스트 금지) */
     --gold-text: #7E6236; /* 억새 — 텍스트용 4.7:1 */
     --camellia: #8C2F39; /* 동백 — 예식일에만 */
+    /* 봄 연핑크 — 세 단계로 쓴다.
+       --pink      : 강조 문구(섹션 제목)용. 사용자가 지정한 연한 봄 핑크.
+                     paper 1.92:1 / tint 1.77:1 로 WCAG 기준(큰 글자 3:1)에는 못 미친다.
+                     연한 톤을 우선한 의도된 선택이다. 진하게 바꿔야 하면 #C75B80(3.29:1).
+       --pink-pale : 하트 채움용. 그 위의 흰 숫자는 1.89:1 이다(장식이라 허용 — 아래 하트 주석 참조). */
+    --pink: #E89BAC;
+    --pink-pale: #F4A7C0;
     --line: rgba(46, 64, 52, .18);
     --line-soft: rgba(46, 64, 52, .10);
     --scrim: rgba(26, 36, 29, .5);
-    --paper-rgb: 240, 242, 237;
+    --paper-rgb: 255, 255, 255;
     /* 터치 타깃 최소 크기 — 하객 연령대를 고려한 하한선 */
     --tap: 44px;
-    --display: 'Noto Sans KR', 'Noto Sans KR', serif;
-    --body: 'Noto Sans KR', 'Noto Sans KR', sans-serif;
-    --latin: 'Noto Sans KR', 'Noto Sans KR', serif;
+    /* 페이지 전체를 이랜드 초이스로 쓴다. 예비 글꼴은 기기에 이미 있는 것으로 —
+       웹폰트가 안 뜨는 상황에서 또 다른 웹폰트를 기다리게 하면 의미가 없다. */
+    --display: 'ELAND Choice', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    --body: var(--display);
+    --latin: var(--display);
+    --emph: var(--display);
     --page: 460px;
     --gut: 26px;
     --radius: 2px;
@@ -31,14 +78,18 @@
 
 /* ---------- 리셋 ---------- */
 *, *::before, *::after { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
+html {
+  -webkit-text-size-adjust: 100%;
+  /* '맨 위로 / 맨 아래로' 버튼이 이 한 줄로 부드럽게 움직인다.
+     자바스크립트 없이 <a href="#..."> 만으로 동작한다. */
+  scroll-behavior: smooth;
+}
 body {
   margin: 0;
   font-family: var(--body);
   font-weight: 300;
   color: var(--ink);
-  background: var(--forest);
-  background-image: radial-gradient(120% 80% at 50% 0%, #3B5142 0%, #223026 70%, #1A241D 100%);
+  background: #FFFFFF;
   line-height: 1.9;
   letter-spacing: -.01em;
   overflow-x: hidden;
@@ -46,6 +97,11 @@ body {
 img { display: block; max-width: 100%; }
 button { font: inherit; color: inherit; cursor: pointer; }
 a { color: inherit; }
+
+/* tabular-nums: 매초 바뀌는 숫자가 자릿수마다 폭이 달라 흔들리는 것을 막는다.
+   (핑크·이랜드 초이스는 강조 문구인 .section__title 로 옮겼다) */
+b { font-weight: 400; font-variant-numeric: tabular-nums; }
+
 :focus-visible { outline: 2px solid var(--gold-text); outline-offset: 3px; }
 [hidden] { display: none !important; }
 
@@ -54,15 +110,13 @@ a { color: inherit; }
   max-width: var(--page);
   margin: 0 auto;
   background: var(--paper);
-  box-shadow: 0 0 60px rgba(0, 0, 0, .35);
   overflow: hidden;
 }
 
-/* 배경 그라데이션은 종이 바깥이 보이는 화면에서만 고정한다.
-   모바일에서는 .paper 가 화면을 꽉 채워 보이지도 않으면서
-   iOS 에서 스크롤 리페인트 비용만 발생시킨다. */
+/* 흰 배경 위의 흰 종이라 예전의 짙은 그림자(rgba .35)는 얼룩처럼 보인다.
+   종이 바깥이 보이는 넓은 화면에서만 아주 옅은 경계선을 준다. */
 @media (min-width: 461px) {
-  body { background-attachment: fixed; }
+  .paper { box-shadow: 0 0 0 1px rgba(35, 37, 32, .07); }
 }
 
 /* =============================================================
@@ -73,19 +127,45 @@ a { color: inherit; }
   text-align: center;
   position: relative;
 }
-.cover__eyebrow {
-  margin: 0 0 34px;
-  font-family: var(--display);
-  font-size: 0.8125rem;
-  letter-spacing: .12em;
-  color: var(--ink-soft);
-}
+/* 아치 창 + 창살 + 아치를 감싸는 표지 문구
+   -------------------------------------------------------------
+   세 값이 서로 맞물려 있다. 하나만 고치면 글자가 아치에서 떨어진다.
 
-/* 아치 창 + 창살 */
-.arch { display: flex; justify-content: center; }
+     .arch__frame width  82%  → 아치 반지름 = 폭의 41%
+     .arch        padding-top 9%  → 아치 꼭대기를 글자 띠만큼 내린다
+     SVG viewBox "0 0 200 100" 의 원 중심 (100,100) / 반지름 86
+
+   .arch 폭을 200 이라 보면 아치 반지름은 82. padding-top 9% 로 아치를 내려
+   원의 중심이 (100,100) 에 오게 했다. 즉 SVG 아래변(y=100)이 아치 원의 중심과
+   정확히 겹친다. 글자 기준선은 반지름 86 → 아치 곡선 바깥 4 만큼.
+
+   오프셋을 .arch__frame 의 margin-top 이 아니라 .arch 의 padding-top 으로 준다.
+   .arch 에 패딩·보더가 없으면 자식의 margin-top 이 마진 상쇄로 .arch 바깥으로
+   빠져나가 .arch 자체를 밀어버리고, 정작 안에서는 아무것도 내려가지 않는다.
+   (절대배치의 기준은 패딩 박스라 SVG 의 top:0 은 패딩 위쪽 끝 = .arch 최상단이다.)
+   ------------------------------------------------------------- */
+.arch { position: relative; padding-top: 9%; }
+.arch__crown {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: auto;      /* viewBox 200:100 → 높이는 폭의 절반 */
+  overflow: visible;
+  pointer-events: none;
+}
+.arch__crown text {
+  font-family: var(--display);
+  font-weight: 700;
+  /* 좌표계 단위다(폭 200 기준). 14 → .arch 폭의 7% */
+  font-size: 14px;
+  letter-spacing: .04em;
+  fill: var(--forest);
+}
 .arch__frame {
   position: relative;
   width: 82%;
+  margin: 0 auto;
   aspect-ratio: 3 / 4;
   border-radius: 999px 999px var(--radius) var(--radius);
   overflow: hidden;
@@ -108,6 +188,7 @@ a { color: inherit; }
   box-shadow: inset 0 0 0 1px rgba(var(--paper-rgb), .6);
 }
 
+/* 이름은 '오원빈 | 김경란' 한 줄. */
 .cover__names {
   margin: 40px 0 0;
   font-family: var(--display);
@@ -116,31 +197,36 @@ a { color: inherit; }
   letter-spacing: .18em;
   line-height: 1.5;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 10px;
 }
+/* 자간은 마지막 글자 뒤에도 붙는다. 그 빈칸 때문에 이름이 왼쪽으로 밀려 보이므로
+   같은 값만큼 들여써서 되돌린다(가운데 정렬을 눈에 보이는 글자 기준으로 맞추는 것). */
 .cover__name { text-indent: .18em; }
+/* 이름 사이 구분선. 글자가 아니라 선으로 보여야 해서 자간을 주지 않는다. */
 .cover__amp {
     font-family: var(--latin);
-    font-size: 1.0625rem;    
-    letter-spacing: .34em;
-    text-indent: .34em;
+    font-size: 1.5rem;
+    line-height: 1;
     color: var(--gold-text);
-    text-transform: lowercase;
 }
+/* 한글 날짜라 자간을 확 줄인다. .22em 은 라틴 숫자용이었고
+   '2026년 11월 22일 일요일 오후 2시' 에 그대로 쓰면 좁은 화면에서 넘친다. */
 .cover__date {
   margin: 26px 0 4px;
-  font-family: var(--latin);
-  font-size: 1.1875rem;
-  letter-spacing: .22em;
-  text-indent: .22em;
+  font-family: var(--display);
+  font-size: 1.0625rem;
+  letter-spacing: .02em;
   color: var(--forest);
 }
+/* 날짜와 같은 크기·자간으로 맞춘다(두 줄이 한 덩어리로 읽히게). */
 .cover__place {
   margin: 0;
-  font-size: 0.8125rem;
-  letter-spacing: .04em;
+  font-family: var(--display);
+  font-size: 1.0625rem;
+  letter-spacing: .02em;
   color: var(--ink-soft);
 }
 
@@ -175,21 +261,23 @@ a { color: inherit; }
 }
 .section--tint { background: var(--paper-tint); }
 
-.eyebrow {
-  margin: 0 0 12px;
-  font-family: var(--latin);
-  font-size: 0.75rem;
-  letter-spacing: .38em;
-  text-indent: .38em;
-  color: var(--gold-text);
-}
+/* (영문 라벨 INVITATION / GALLERY 등은 한글 제목과 뜻이 겹쳐 삭제했다.
+   .eyebrow 규칙도 함께 지웠다.) */
+
+/* 강조 문구 — 핑크 + 이랜드 초이스체.
+   24px 은 임의로 키운 게 아니다. WCAG 는 24px 이상을 '큰 글자'로 보고 대비 기준을
+   4.5:1 에서 3:1 로 내려주는데, 연한 봄 핑크는 그 3:1 구간에서만 살아남는다.
+   여기서 크기를 줄이면 핑크를 진하게 바꿔야 한다. */
 .section__title {
   margin: 0 0 28px;
-  font-family: var(--display);
-  font-weight: 400;
-  font-size: 1.3125rem;
-  letter-spacing: .1em;
-  color: var(--forest);
+  font-family: var(--emph);
+  font-weight: 700;
+  font-size: 1.5rem;
+  letter-spacing: .06em;
+  color: var(--pink);
+  /* 한글은 기본값이 글자 단위 줄바꿈이라 좁은 화면에서 '초대합니 / 다' 로 끊긴다.
+     단어(어절) 경계에서만 끊도록 바꿔 '소중한 분들을 / 초대합니다' 가 되게 한다. */
+  word-break: keep-all;
 }
 .prose {
   margin: 0;
@@ -273,18 +361,41 @@ a { color: inherit; }
 /* =============================================================
    혼주
    ============================================================= */
+/* 두 줄을 양쪽 맞춤(justify)한다.
+     오성택 · 이해정의 아들  오원빈
+     김봉식 · 이순희의  딸   김경란
+   두 줄이 같은 왼쪽에서 시작해 같은 오른쪽에서 끝나고, 사이 공백이 늘어나 채운다.
+
+   inline-grid 를 쓰는 이유: 한 칸 격자의 폭은 '가장 긴 줄'의 폭이 되고
+   두 줄(격자 항목)이 그 폭으로 늘어난다. 즉 맞출 기준폭이 내용에서 저절로 나온다.
+   섹션 폭(100%)에 맞추면 짧은 줄의 공백이 과하게 벌어져 성기게 보인다.
+   덩어리 자체는 부모의 text-align: center 로 가운데에 놓인다.
+
+   text-align-last 가 반드시 필요하다. 각 줄이 '마지막 줄'이라
+   text-align: justify 만으로는 정렬이 걸리지 않는다. */
 .family {
-  display: grid;
+  display: inline-grid;
   gap: 14px;
   font-family: var(--display);
   font-size: 0.9375rem;
   letter-spacing: .04em;
   color: var(--ink);
 }
-.family__row { display: flex; align-items: baseline; justify-content: center; gap: 8px; flex-wrap: wrap; }
-.family__parents { color: var(--ink-soft); }
-.family__of { font-size: 0.78125rem; color: var(--ink-soft); }
-.family__child { font-size: 1.0625rem; letter-spacing: .12em; }
+/* 한 줄 = 3칸: [부모 이름] [아들·딸] [이름]
+   가운데 칸만 고정 폭이다. 이래야 '딸'(1자) 이 '아들'(2자) 이 차지하는 자리의
+   가운데에 놓이고, 두 줄의 이름 시작 위치가 어긋나지 않는다.
+   양옆 칸은 내용 폭(auto)인데, '오성택 · 이해정의' 와 '김봉식 · 이순희의' 가
+   글자 수가 같고 '원빈'·'경란' 도 두 자씩이라 두 줄이 저절로 맞는다. */
+.family__row {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 2.4em auto;
+  gap: 0 10px;
+  align-items: baseline;
+}
+.family__parents { text-align: right; color: var(--ink-soft); }
+.family__role { text-align: center; color: var(--ink-soft); }
+.family__child { text-align: left; font-size: 1.0625rem; letter-spacing: .12em; }
 .contact-open { margin-top: 30px; }
 
 /* =============================================================
@@ -297,61 +408,93 @@ a { color: inherit; }
   letter-spacing: .08em;
   color: var(--forest);
 }
+/* 월 표시 — 달력 위에 핑크로. 제목과 같은 계열이라 강조 글꼴을 쓴다. */
+.cal__month {
+  margin: 0 0 22px;
+  font-family: var(--emph);
+  font-weight: 700;
+  font-size: 1.125rem;
+  letter-spacing: .04em;
+  color: var(--pink);
+}
+/* 테두리선을 없애 흰 배경에 그대로 얹힌 느낌으로 둔다. */
 .cal {
   max-width: 320px;
   margin: 0 auto;
-  padding: 20px 12px 16px;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
+  padding: 0;
 }
 .cal__head, .cal__grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
 }
+/* 요일은 한글(일 월 화 …)로, 숫자보다 진하게 얹는다. */
 .cal__head {
-  margin-bottom: 10px;
-  font-family: var(--latin);
-  font-size: 0.6875rem;
-  letter-spacing: .12em;
-  color: var(--ink-soft);
+  margin-bottom: 18px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+  color: var(--ink);
 }
-.cal__grid { gap: 4px 0; }
+/* 일요일 머리글만 핑크. 날짜 숫자는 요일에 따라 색을 바꾸지 않는다. */
+.cal__head--sun { color: var(--pink); }
+.cal__grid { gap: 12px 0; }
+/* 숫자는 가는 획(300)으로 — 참고 이미지의 가볍고 넉넉한 느낌. */
 .cal__day {
   height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
+  font-weight: 300;
   color: var(--ink-soft);
 }
-.cal__day--sun { color: rgba(140, 47, 57, .85); }
+/* 숫자는 흰색(참고 이미지와 동일한 느낌).
+   연한 하트 위 흰 글자는 대비 1.89:1 로 읽기 기준에는 못 미친다.
+   달력 자체가 aria-hidden 이고 같은 날짜를 위의 #dateLine 과 아래 #dday 가
+   글로 두 번 전달하므로, 여기서는 정보 전달이 아니라 장식으로만 쓰인다. */
 .cal__day--mark {
   position: relative;
   color: var(--paper);
-  font-weight: 500;
+  font-weight: 700;
 }
+/* 예식일은 하트로 표시한다.
+   SVG 배경 한 줄이면 되므로 clip-path 나 ::before/::after 두 겹 트릭을 쓰지 않는다
+   (구형 휴대폰 브라우저에서도 그대로 보인다).
+
+   채움 --pink-pale(#F4A7C0), 테두리 --pink(#E89BAC) — 참고 이미지와 같은 연한 톤.
+   테두리를 진하게(#C75B80, 3.90:1) 두면 윤곽은 또렷하지만 이미지의 부드러운 느낌이
+   사라진다. 부드러운 쪽을 택했으므로 하트 윤곽은 2.16:1 로 옅다.
+
+   ★ 주의: data-URI 안에서는 CSS 변수를 읽을 수 없어 색을 헥스로 박아 두었다.
+     --pink(#E89BAC) / --pink-pale(#F4A7C0) 를 바꾸면 아래 %23E89BAC · %23F4A7C0 도
+     함께 고쳐야 한다. 토큰만 바꾸면 하트만 옛 색으로 남는다. */
 .cal__day--mark::before {
   content: '';
   position: absolute;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--camellia);
+  left: 50%;
+  top: 50%;
+  width: 34px;
+  height: 34px;
+  transform: translate(-50%, -50%);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23F4A7C0' stroke='%23E89BAC' stroke-width='1.1' d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/%3E%3C/svg%3E") center/contain no-repeat;
   z-index: 0;
 }
-.cal__day--mark > span { position: relative; z-index: 1; }
+/* 하트는 원과 달리 아래가 뾰족해 무게중심이 위에 있다. 숫자를 살짝 올려 살 두꺼운 곳에 앉힌다. */
+.cal__day--mark > span { position: relative; z-index: 1; transform: translateY(-2px); }
 .dday {
   margin: 24px 0 0;
   font-size: 0.8125rem;
   letter-spacing: .04em;
+  line-height: 2.2;
   color: var(--ink-soft);
 }
+/* 숫자는 검정 계열로 둔다. 붉은 계열(동백)은 날짜를 세는 맥락에서
+   불길한 뜻으로 읽힐 수 있다. */
 .dday b {
-  font-family: var(--latin);
   font-size: 1.0625rem;
-  font-weight: 400;
-  color: var(--camellia);
-  letter-spacing: .08em;
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: var(--ink);
 }
 
 /* =============================================================
@@ -465,25 +608,6 @@ a { color: inherit; }
   color: var(--ink-soft);
 }
 .venue-tel { margin: 18px 0 0; font-size: 0.78125rem; color: var(--ink-soft); }
-
-/* =============================================================
-   함께한 시간
-   ============================================================= */
-.counter {
-  margin: 0;
-  font-family: var(--latin);
-  font-size: 1.25rem;
-  letter-spacing: .1em;
-  line-height: 2;
-  color: var(--forest);
-}
-.counter b { font-weight: 400; font-size: 1.75rem; color: var(--forest); }
-.counter small {
-  font-family: var(--body);
-  font-size: 0.75rem;
-  letter-spacing: 0;
-  color: var(--ink-soft);
-}
 
 /* =============================================================
    계좌 아코디언
@@ -718,7 +842,7 @@ a { color: inherit; }
   border-bottom: 1px solid var(--line-soft);
 }
 .contact-row__who { font-size: 0.8125rem; color: var(--ink-soft); }
-.contact-row__who b { font-family: var(--display); font-weight: 400; font-size: 0.90625rem; color: var(--ink); }
+.contact-row__who b { font-family: var(--display); font-size: 0.90625rem; color: var(--ink); }
 .contact-row__acts { display: flex; gap: 6px; }
 .contact-row__acts a {
   display: inline-flex;
@@ -757,35 +881,6 @@ a { color: inherit; }
 .input:focus { border-color: var(--gold-text); outline: none; }
 textarea.input { resize: vertical; line-height: 1.7; }
 
-.radios { display: flex; gap: 8px; }
-.radio { flex: 1; position: relative; }
-.radio input {
-  position: absolute;
-  opacity: 0;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  cursor: pointer;
-}
-.radio span {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  font-size: 0.84375rem;
-  color: var(--ink-soft);
-  transition: all .18s var(--ease);
-}
-.radio input:checked + span {
-  border-color: var(--forest);
-  background: var(--forest);
-  color: var(--paper);
-}
-.radio input:focus-visible + span { outline: 2px solid var(--gold-text); outline-offset: 2px; }
-
-.form__note { margin: 0; font-size: 0.6875rem; line-height: 1.7; color: var(--ink-faint); }
 .form__error { margin: 0; font-size: 0.75rem; color: var(--camellia); }
 .form__actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
 
@@ -825,6 +920,41 @@ textarea.input { resize: vertical; line-height: 1.7; }
   background: rgba(var(--paper-rgb), .82);
   backdrop-filter: blur(6px);
 }
+/* ---------- 맨 위 / 맨 아래로 ---------- */
+.jump {
+  position: fixed;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  /* 넓은 화면에서는 종이 오른쪽 안쪽에 붙는다(배경음악 버튼과 같은 계산). */
+  right: max(14px, calc(50vw - var(--page) / 2 + 14px));
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.jump__btn {
+  width: var(--tap);
+  height: var(--tap);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: rgba(var(--paper-rgb), .82);
+  backdrop-filter: blur(6px);
+  text-decoration: none;
+}
+.jump__btn:hover { border-color: var(--gold); }
+/* 화살촉은 테두리 두 변을 돌린 것이다. 글꼴에 없는 글자를 쓰지 않아도 되고
+   글꼴이 늦게 떠도 모양이 흔들리지 않는다. */
+.jump__btn span {
+  width: 8px;
+  height: 8px;
+  border-left: 1.5px solid var(--forest);
+  border-bottom: 1.5px solid var(--forest);
+}
+.jump__btn[href="#cover"] span { transform: rotate(135deg) translate(-1px, -1px); }
+.jump__btn[href="#end"] span { transform: rotate(-45deg) translate(-1px, -1px); }
+
 .bgm-toggle__bars { display: flex; align-items: flex-end; gap: 2px; height: 13px; }
 .bgm-toggle__bars i { width: 2px; height: 4px; background: var(--forest); }
 .bgm-toggle[aria-pressed="true"] .bgm-toggle__bars i { animation: eq .9s ease-in-out infinite; }
@@ -845,8 +975,8 @@ textarea.input { resize: vertical; line-height: 1.7; }
 .cover__names,
 .cover__date,
 .cover__place,
-.cover__eyebrow { animation: fadeUp .9s var(--ease) both; }
-.cover__eyebrow  { animation-delay: .05s; }
+.arch__crown { animation: fadeUp .9s var(--ease) both; }
+.arch__crown     { animation-delay: .05s; }
 .cover .arch__frame { animation-delay: .15s; }
 .cover__names    { animation-delay: .35s; }
 .cover__date     { animation-delay: .5s; }
@@ -858,10 +988,14 @@ textarea.input { resize: vertical; line-height: 1.7; }
    장식적 움직임(스크롤 등장, 표지 진입, 음악 이퀄라이저, 반복 애니메이션)만 끄고,
    토스트·시트처럼 무언가 일어났음을 알리는 전환은 짧게 남긴다. */
 @media (prefers-reduced-motion: reduce) {
+  /* 긴 문서를 훑고 지나가는 움직임은 멀미를 일으키는 대표적인 동작이다.
+     '맨 위 / 맨 아래로'는 그대로 동작하고, 이동만 즉시 일어난다. */
+  html { scroll-behavior: auto; }
+
   /* 장식 — 완전히 정지 */
   .reveal,
   .cover .arch__frame,
-  .cover__eyebrow,
+  .arch__crown,
   .cover__names,
   .cover__date,
   .cover__place {
@@ -883,7 +1017,7 @@ textarea.input { resize: vertical; line-height: 1.7; }
   .toast.is-on { transform: translate(-50%, 0); }
 
   /* 상태 전환 — 즉시가 아니라 아주 짧게 */
-  .btn, .acc__head::after, .radio span, .chip { transition-duration: .08s; }
+  .btn, .acc__head::after, .chip { transition-duration: .08s; }
 }
 
 /* ---------- 아주 작은 화면 ---------- */

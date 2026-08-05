@@ -28,16 +28,17 @@
     <meta property="og:image:width" content="800">
     <meta property="og:image:height" content="400">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="theme-color" content="#2E4034">
+    <!-- 휴대폰 브라우저 주소창 색. 배경이 흰색이라 함께 흰색으로 맞춘다. -->
+    <meta name="theme-color" content="#FFFFFF">
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400&family=Italiana&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+    <!-- 글꼴은 이랜드 초이스 하나만 쓴다(style.css 의 @font-face).
+         구글 폰트(Noto Sans KR / Gowun Batang / Italiana)는 더 이상 쓰지 않아 지웠다 — 약 490KB 절약. -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
    
     <!-- ?v= 뒤 숫자는 캐시 번호입니다.
          내용을 고쳐 다시 올렸는데 하객 휴대폰에서 예전 내용이 그대로 보인다면,
          아래 세 곳(style.css / config.js / main.js)의 숫자를 1씩 올리세요. -->
-    <link rel="stylesheet" href="assets/css/style.css?v=4">
+    <link rel="stylesheet" href="assets/css/style.css?v=14">
 </head>
 <body>
 
@@ -46,23 +47,49 @@
   <span class="bgm-toggle__bars" aria-hidden="true"><i></i><i></i><i></i></span>
 </button>
 
+<!-- 맨 위 / 맨 아래로 이동.
+     <a href="#..."> 앵커라서 자바스크립트가 필요 없다.
+     부드럽게 움직이는 건 style.css 의 html { scroll-behavior: smooth } 한 줄이 한다. -->
+<nav class="jump" aria-label="빠른 이동">
+  <a class="jump__btn" href="#cover" aria-label="맨 위로">
+    <span aria-hidden="true"></span>
+  </a>
+  <a class="jump__btn" href="#end" aria-label="맨 아래로">
+    <span aria-hidden="true"></span>
+  </a>
+</nav>
+
 <main class="paper">
 
   <!-- ============ 표지 ============ -->
   <header class="cover" id="cover">
-    <p class="cover__eyebrow" data-bind="greeting.eyebrow"></p>
-
     <div class="arch">
+      <!-- 표지 문구는 아치의 곡선을 그대로 따라 감싼다.
+           아래 좌표계는 .arch 폭을 200 으로 본 값이다. 아치(사진틀)는 폭의 82% 이므로
+           반지름 82, 중심 (100,100). 글자 기준선은 그보다 4 만큼 바깥인 반지름 86 위를 지난다.
+           CSS 의 .arch { padding-top: 9% } 가 이 좌표계와 맞물려 있으니 함께 고칠 것. -->
+      <svg class="arch__crown" viewBox="0 0 200 100" xmlns:xlink="http://www.w3.org/1999/xlink">
+        <defs>
+          <path id="archCurve" d="M 14 100 A 86 86 0 0 1 186 100"></path>
+        </defs>
+        <text>
+          <!-- href 와 xlink:href 를 함께 둔다. 구형 모바일 사파리는 xlink 만 인식한다. -->
+          <textPath href="#archCurve" xlink:href="#archCurve"
+                    startOffset="50%" text-anchor="middle"
+                    data-bind="greeting.eyebrow"></textPath>
+        </text>
+      </svg>
+
       <div class="arch__frame">
         <!-- src 를 여기 직접 적어두면 HTML 파싱 중에 내려받기가 시작돼 표지가 더 빨리 뜨고,
              자바스크립트가 막힌 환경에서도 사진이 보인다. 파일이 없으면 JS 가 자리표시로 교체한다. -->
-        <img class="arch__img" id="coverImage" src="assets/images/cover.jpg" alt="신랑 오원빈, 신부 김경란">        
+        <img class="arch__img" id="coverImage" src="assets/images/cover.jpg" alt="신랑 오원빈, 신부 김경란">
       </div>
     </div>
 
     <h1 class="cover__names">
       <span class="cover__name" data-bind="groom.name"></span>
-      <span class="cover__amp" aria-hidden="true">and</span>
+      <span class="cover__amp" aria-hidden="true">|</span>
       <span class="cover__name" data-bind="bride.name"></span>
     </h1>
 
@@ -76,7 +103,6 @@
 
   <!-- ============ 인사말 ============ -->
   <section class="section reveal" id="greeting" aria-labelledby="greetingTitle">
-    <p class="eyebrow">INVITATION</p>
     <h2 class="section__title" id="greetingTitle" data-bind="greeting.title"></h2>
     <p class="prose" id="greetingBody"></p>
 
@@ -91,7 +117,6 @@
 
   <!-- ============ 예식 안내 · 달력 ============ -->
   <section class="section section--tint reveal" id="calendar" aria-labelledby="calendarTitle">
-    <p class="eyebrow">THE DAY</p>
     <h2 class="section__title" id="calendarTitle">예식 안내</h2>
 
     <p class="dateline" id="dateLine"></p>
@@ -99,6 +124,7 @@
     <!-- 달력은 위의 날짜 문장을 눈으로 확인시켜 주는 보조 그림이다.
          스크린리더에는 라벨 없는 숫자 30개로 읽히므로 읽기 대상에서 뺀다.
          같은 정보를 #dateLine 과 #dday 가 문장으로 전달한다. -->
+    <p class="cal__month" id="calMonth" aria-hidden="true"></p>
     <div class="cal" id="calWrap" aria-hidden="true">
       <div class="cal__head" id="calHead"></div>
       <div class="cal__grid" id="calGrid"></div>
@@ -109,7 +135,6 @@
 
   <!-- ============ 갤러리 ============ -->
   <section class="section reveal" id="gallery" aria-labelledby="galleryTitle">
-    <p class="eyebrow">GALLERY</p>
     <h2 class="section__title" id="galleryTitle">갤러리</h2>
     <div class="grid" id="galleryGrid"></div>
     <p class="hint">사진을 누르면 크게 볼 수 있어요</p>
@@ -117,7 +142,6 @@
 
   <!-- ============ 오시는 길 ============ -->
   <section class="section section--tint reveal" id="location" aria-labelledby="locationTitle">
-    <p class="eyebrow">LOCATION</p>
     <h2 class="section__title" id="locationTitle">오시는 길</h2>
 
     <p class="place-name">
@@ -146,32 +170,15 @@
     <p class="venue-tel" id="venueTel" hidden></p>
   </section>
 
-  <!-- ============ 함께한 시간 ============ -->
-  <section class="section reveal" id="together" aria-labelledby="togetherTitle" hidden>
-    <p class="eyebrow">SINCE</p>
-    <h2 class="section__title" id="togetherTitle">함께한 시간</h2>
-    <p class="counter" id="togetherCounter" aria-live="off"></p>
-  </section>
-
   <!-- ============ 마음 전하실 곳 ============ -->
   <section class="section section--tint reveal" id="account" aria-labelledby="accountTitle" hidden>
-    <p class="eyebrow">GIFT</p>
     <h2 class="section__title" id="accountTitle">마음 전하실 곳</h2>
     <p class="prose prose--sm" id="accountMessage"></p>
     <div class="accordions" id="accountList"></div>
   </section>
 
-  <!-- ============ 참석 여부 ============ -->
-  <section class="section reveal" id="rsvp" aria-labelledby="rsvpTitle" hidden>
-    <p class="eyebrow">R.S.V.P</p>
-    <h2 class="section__title" id="rsvpTitle">참석 여부 전하기</h2>
-    <p class="prose prose--sm" id="rsvpMessage"></p>
-    <button class="btn" type="button" data-open="rsvpSheet">참석 여부 전하기</button>
-  </section>
-
   <!-- ============ 방명록 ============ -->
   <section class="section section--tint reveal" id="guestbook" aria-labelledby="guestbookTitle" hidden>
-    <p class="eyebrow">GUESTBOOK</p>
     <h2 class="section__title" id="guestbookTitle">방명록</h2>
     <p class="prose prose--sm">축하의 한마디를 남겨주세요.</p>
 
@@ -183,7 +190,8 @@
   </section>
 
   <!-- ============ 마무리 ============ -->
-  <footer class="closing reveal">
+  <!-- id="end" 는 '맨 아래로' 버튼의 도착지다. -->
+  <footer class="closing reveal" id="end">
     <div class="rule rule--wide" aria-hidden="true"></div>
     <p class="closing__line">함께해 주시는 모든 분께 감사드립니다</p>
     <p class="closing__names">
@@ -209,62 +217,6 @@
     <h3 class="sheet__title" id="contactSheetTitle">연락하기</h3>
     <div class="sheet__body" id="contactList"></div>
     <button class="btn btn--ghost sheet__close" type="button" data-close>닫기</button>
-  </div>
-</div>
-
-<!-- ============ 참석 여부 시트 ============ -->
-<div class="sheet" id="rsvpSheet" role="dialog" aria-modal="true" aria-labelledby="rsvpSheetTitle" hidden>
-  <div class="sheet__panel">
-    <h3 class="sheet__title" id="rsvpSheetTitle">참석 여부 전하기</h3>
-    <form class="form" id="rsvpForm">
-      <fieldset class="form__row">
-        <legend class="form__label">어느 쪽 하객이신가요?</legend>
-        <div class="radios">
-          <label class="radio"><input type="radio" name="side" value="신랑측" required><span>신랑측</span></label>
-          <label class="radio"><input type="radio" name="side" value="신부측"><span>신부측</span></label>
-        </div>
-      </fieldset>
-
-      <fieldset class="form__row">
-        <legend class="form__label">참석하시나요?</legend>
-        <div class="radios">
-          <label class="radio"><input type="radio" name="attend" value="참석" required><span>참석</span></label>
-          <label class="radio"><input type="radio" name="attend" value="미참석"><span>미참석</span></label>
-        </div>
-      </fieldset>
-
-      <label class="form__row">
-        <span class="form__label">성함</span>
-        <input class="input" type="text" name="name" maxlength="20" required autocomplete="name">
-      </label>
-
-      <label class="form__row">
-        <span class="form__label">동반 인원 (본인 포함)</span>
-        <input class="input" type="number" name="count" min="1" max="20" value="1" inputmode="numeric">
-      </label>
-
-      <label class="form__row">
-        <span class="form__label">식사 여부</span>
-        <select class="input" name="meal">
-          <option value="예정">식사함</option>
-          <option value="안함">식사 안 함</option>
-          <option value="미정">미정</option>
-        </select>
-      </label>
-
-      <label class="form__row">
-        <span class="form__label">전하실 말씀 <em class="opt">(선택)</em></span>
-        <textarea class="input" name="memo" rows="2" maxlength="200"></textarea>
-      </label>
-
-      <p class="form__note">전달해 주신 정보는 예식 준비 목적으로만 사용됩니다.</p>
-      <p class="form__error" id="rsvpError" role="alert" hidden></p>
-
-      <div class="form__actions">
-        <button class="btn btn--ghost" type="button" data-close>닫기</button>
-        <button class="btn" type="submit">보내기</button>
-      </div>
-    </form>
   </div>
 </div>
 
@@ -297,7 +249,7 @@
 <!-- ============ 토스트 ============ -->
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="assets/js/config.js?v=4"></script>
-<script src="assets/js/main.js?v=4"></script>
+<script src="assets/js/config.js?v=14"></script>
+<script src="assets/js/main.js?v=14"></script>
 </body>
 </html>

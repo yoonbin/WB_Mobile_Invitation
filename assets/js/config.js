@@ -66,6 +66,8 @@ window.CONFIG = {
 
   /* ---------- 4. 신랑 · 신부 · 혼주 ---------- */
   /* 고인이신 부모님은 이름 앞에 '故 '를 직접 붙이세요. 예: '故 오성택' */
+  /* 이름은 성까지 적으세요. 표지·마무리 서명·연락처는 이 값을 그대로 쓰고,
+     혼주 소개 줄("오성택 · 이해정의 아들 원빈")에서는 성이 자동으로 빠집니다. */
   groom: {
     name: '오원빈',
     role: '아들',
@@ -98,15 +100,7 @@ window.CONFIG = {
     ]
   },
 
-  /* ---------- 6. 함께한 시간 ---------- */
-  together: {
-    enabled: true,
-    // 처음 만난 날 / 사귀기 시작한 날 (시각까지 넣으면 초 단위로 정확해집니다)
-    // ※ 아래 값은 임시 추정치입니다. 실제 날짜로 꼭 바꿔주세요.
-    since: '2022-07-16T00:00:00'
-  },
-
-  /* ---------- 7. 마음 전하실 곳 (계좌) ---------- */
+  /* ---------- 6. 마음 전하실 곳 (계좌) ---------- */
   account: {
     enabled: true,
     message: [
@@ -117,35 +111,24 @@ window.CONFIG = {
     ],
     // 항목을 비워두면(bank·number가 '') 그 사람은 목록에서 빠집니다.
     groomSide: [
-      { role: '신랑', name: '오원빈', bank: '', number: '', kakaopay: '' },
-      { role: '아버지', name: '오성택', bank: '', number: '', kakaopay: '' },
-      { role: '어머니', name: '이해정', bank: '', number: '', kakaopay: '' }
+      { role: '신랑', name: '오원빈', bank: '1111-123123', number: '11', kakaopay: '' },
+      { role: '아버지', name: '오성택', bank: '2223', number: '22', kakaopay: '' },
+      { role: '어머니', name: '이해정', bank: '3333', number: '33', kakaopay: '' }
     ],
     brideSide: [
-      { role: '신부', name: '김경란', bank: '', number: '', kakaopay: '' },
-      { role: '아버지', name: '김봉식', bank: '', number: '', kakaopay: '' },
-      { role: '어머니', name: '이순희', bank: '', number: '', kakaopay: '' }
+      { role: '신부', name: '김경란', bank: '1234231', number: '44', kakaopay: '' },
+      { role: '아버지', name: '김봉식', bank: '5555', number: '55', kakaopay: '' },
+      { role: '어머니', name: '이순희', bank: '6666', number: '66', kakaopay: '' }
     ]
   },
 
-  /* ---------- 8. 방명록 · 참석 여부 ---------- */
+  /* ---------- 7. 방명록 ---------- */
   /* 구글 시트 연동 주소. gas/README.md 순서대로 배포한 뒤 나온 주소를 붙여넣으세요.
      비워두면 화면은 그대로 보이되 '준비 중'으로 표시되고 저장은 되지 않습니다. */
   gasUrl: '',
   guestbook: { enabled: true },
-  rsvp: {
-    enabled: true,
-    // 처음 방문했을 때 참석 여부 팝업을 자동으로 띄울지
-    autoPopup: true,
-    message: [
-      '축하의 마음으로 참석해 주시는 모든 분들을',
-      '정성껏 모시고자 합니다.',
-      '참석 여부를 미리 알려주시면',
-      '준비에 큰 도움이 됩니다.'
-    ]
-  },
 
-  /* ---------- 9. 배경음악 ---------- */
+  /* ---------- 8. 배경음악 ---------- */
   bgm: {
     // assets/audio/ 폴더에 mp3를 넣고 파일명을 적으세요. 비우면 버튼이 숨겨집니다.
     file: '',
@@ -153,7 +136,7 @@ window.CONFIG = {
     autoplay: false
   },
 
-  /* ---------- 10. 카카오톡 공유 (선택) ---------- */
+  /* ---------- 9. 카카오톡 공유 (선택) ---------- */
   /* 앱 키가 없으면 '링크 복사'로 자동 대체됩니다.
      발급: developers.kakao.com → 앱 생성 → JavaScript 키 → 플랫폼에 배포 도메인 등록 */
   kakao: { appKey: '' }

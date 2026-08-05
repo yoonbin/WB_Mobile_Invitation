@@ -16,7 +16,9 @@
   function placeholder(label) {
     var svg =
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400">' +
-      '<rect width="300" height="400" fill="#E6EAE1"/>' +
+      // 배경이 흰색이라 자리표시도 중성 회색으로 둔다(예전 값 #E6EAE1 은 연녹색이었다).
+      // 사진을 넣기 전에는 이 자리표시가 갤러리 18칸을 전부 채우므로 눈에 가장 많이 띈다.
+      '<rect width="300" height="400" fill="#F2F2F2"/>' +
       '<g fill="none" stroke="#2E4034" stroke-opacity=".16">' +
       '<path d="M0 100h300M0 200h300M0 300h300M100 0v400M200 0v400"/></g>' +
       '<text x="150" y="196" text-anchor="middle" font-family="serif" font-size="15" fill="#5C6159">사진 준비 중</text>' +
@@ -90,16 +92,20 @@
 
   withFallback($('#coverImage'), (C.gallery && C.gallery.cover) || 'cover.jpg');
 
-  if (hasDate) {
-    var h = weddingAt.getHours();
-    var ampm = h < 12 ? 'AM' : 'PM';
-    var h12 = h % 12 === 0 ? 12 : h % 12;
-    var mm = weddingAt.getMinutes();
-    $('#coverDate').textContent =
-      weddingAt.getFullYear() + '. ' + pad(weddingAt.getMonth() + 1) + '. ' + pad(weddingAt.getDate()) +
-      '. ' + DOW[weddingAt.getDay()] + ' ' + h12 + (mm ? ':' + pad(mm) : '') + ampm;
-  }
+  // 표지 날짜는 config 의 dateText 를 그대로 쓴다.
+  // 예식 안내 섹션과 같은 문구가 되어 한 곳만 고치면 둘이 함께 바뀐다.
+  if (hasDate) { $('#coverDate').textContent = W.dateText || koreanDate(weddingAt); }
+
   function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+  // dateText 를 비워둔 경우의 예비 표기: '2026년 11월 22일 일요일 오후 2시'
+  function koreanDate(d) {
+    var h = d.getHours();
+    var mm = d.getMinutes();
+    return d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일 ' +
+      DOW_KR[d.getDay()] + '요일 ' + (h < 12 ? '오전 ' : '오후 ') +
+      (h % 12 === 0 ? 12 : h % 12) + '시' + (mm ? ' ' + mm + '분' : '');
+  }
 
   /* =============================================================
      인사말 · 혼주
@@ -122,11 +128,30 @@
 
     var parents = [p.father && p.father.name, p.mother && p.mother.name].filter(Boolean).join(' · ');
     if (parents) {
-      row.appendChild(span('family__parents', parents + '의 ' + (p.role || '')));
+      // 부모 이름 / 아들·딸 / 이름을 각각 따로 둔다.
+      // 가운데 칸을 고정 폭으로 잡아야 '딸'(1자) 이 '아들'(2자) 자리 가운데에 놓인다.
+      row.appendChild(span('family__parents', parents + '의'));
+      row.appendChild(span('family__role', p.role || ''));
     }
-    row.appendChild(span('family__child', p.name));
+    // 아버지 성이 바로 앞에 나오므로 이름만 적는다(전통적 표기). 오원빈 → 원빈
+    // 부모 이름이 없으면 성을 떼면 누구인지 알 수 없으므로 그대로 둔다.
+    row.appendChild(span('family__child', parents ? givenName(p) : p.name));
     familyEl.appendChild(row);
   });
+  /* 성을 떼고 이름만 돌려준다 — 혼주 소개 줄에서만 쓴다.
+     성은 "아버지 이름과 앞에서 겹치는 만큼"으로 구한다.
+       '오성택' + '오원빈' → 겹침 '오'   → '원빈'
+       '남궁성택' + '남궁원빈' → 겹침 '남궁' → '원빈'   (두 자 성도 맞는다)
+       '오성택' + '원빈'   → 겹침 없음   → '원빈'      (config 에 이미 이름만 적힌 경우)
+     글자 수를 세서 자르는 방식(slice(1))은 위 세 경우 중 하나에서 반드시 틀린다. */
+  function givenName(p) {
+    var f = (p.father && p.father.name) || '';
+    var i = 0;
+    // 이름을 통째로 먹지 않도록 마지막 한 글자는 남긴다
+    while (i < f.length && i < p.name.length - 1 && f.charAt(i) === p.name.charAt(i)) { i++; }
+    return p.name.slice(i);
+  }
+
   function span(cls, text) {
     var s = document.createElement('span');
     s.className = cls;
@@ -184,6 +209,49 @@
   }
 
   /* =============================================================
+     매초 갱신 (D-day)
+     -------------------------------------------------------------
+     el 이 화면에 보이는 동안만 tick 을 1초마다 부른다.
+     청첩장은 열어둔 채 방치되는 일이 많아, 매초 DOM 을 다시 만들면 배터리만 쓴다.
+
+     단, 기본값은 "돌아가는 쪽"이다(fail-open).
+     IntersectionObserver 가 콜백을 늦게 주거나 아예 주지 않는 환경이 있는데,
+     기본값을 멈춤으로 두면 카운터가 로드 시점 값에 얼어붙어 고장난 것처럼 보인다.
+     관찰자가 "화면 밖"이라고 확인해 준 경우에만 끈다.
+
+     tick 이 false 를 돌려주면 더 셀 것이 없다는 뜻이므로 영구히 멈춘다.
+     ============================================================= */
+  function tickWhileVisible(el, tick) {
+    var timer = null;
+    var onScreen = true;
+    var done = false;
+
+    function run() { if (tick() === false) { done = true; stop(); } }
+    function stop() { if (timer) { clearInterval(timer); timer = null; } }
+    function start() {
+      if (timer || done) { return; }
+      run();
+      // run() 안에서 끝났다고 알려오면 타이머를 아예 걸지 않는다
+      if (!done) { timer = setInterval(run, 1000); }
+    }
+    function sync() { if (onScreen && !document.hidden) { start(); } else { stop(); } }
+
+    // 첫 그림은 조건 없이 한 번 그린다.
+    // 백그라운드 탭에서 열리면(카톡 링크를 새 탭으로 여는 흔한 경우) document.hidden 이 true 라,
+    // 첫 렌더링까지 게이트 뒤에 두면 화면에 빈 줄만 남는다. 게이트는 '반복'에만 걸어야 한다.
+    run();
+
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (entries) {
+        onScreen = entries[entries.length - 1].isIntersecting;
+        sync();
+      }, { threshold: 0 }).observe(el);
+    }
+    document.addEventListener('visibilitychange', sync);
+    sync();
+  }
+
+  /* =============================================================
      달력 · D-day
      ============================================================= */
   if (hasDate) {
@@ -191,15 +259,21 @@
       (weddingAt.getFullYear() + '년 ' + (weddingAt.getMonth() + 1) + '월 ' + weddingAt.getDate() + '일 ' +
        DOW_KR[weddingAt.getDay()] + '요일');
 
+    var y = weddingAt.getFullYear(), m = weddingAt.getMonth();
+
+    // 달력 위의 '11월' 표시
+    $('#calMonth').textContent = (m + 1) + '월';
+
+    // 요일 머리글은 한글 한 자(일 월 화 …). 일요일만 색을 달리한다.
     var head = $('#calHead');
-    DOW.forEach(function (d) {
+    DOW_KR.forEach(function (d, i) {
       var c = document.createElement('span');
-      c.textContent = d.slice(0, 3);
+      if (i === 0) { c.className = 'cal__head--sun'; }
+      c.textContent = d;
       head.appendChild(c);
     });
 
     var grid = $('#calGrid');
-    var y = weddingAt.getFullYear(), m = weddingAt.getMonth();
     var first = new Date(y, m, 1).getDay();
     var last = new Date(y, m + 1, 0).getDate();
 
@@ -207,7 +281,6 @@
     for (var d = 1; d <= last; d++) {
       var cell = document.createElement('span');
       cell.className = 'cal__day';
-      if ((first + d - 1) % 7 === 0) { cell.classList.add('cal__day--sun'); }
       var inner = document.createElement('span');
       inner.textContent = d;
       cell.appendChild(inner);
@@ -218,23 +291,40 @@
       grid.appendChild(cell);
     }
 
-    var midnight = new Date(y, m, weddingAt.getDate());
-    var today = new Date();
-    today.setHours(0, 0, 0, 0);
-    var left = Math.round((midnight - today) / 86400000);
+    // 예식 시각(자정이 아니라 config 의 datetime)까지 남은 시간을 매초 센다.
+    var weddingDay = new Date(y, m, weddingAt.getDate());   // 예식일 자정
     var dd = $('#dday');
-    if (left > 0) {
+    var names = (C.groom.name || '신랑') + ' · ' + (C.bride.name || '신부');
+
+    function renderDday() {
+      var now = new Date();
+      var sec = Math.floor((weddingAt - now) / 1000);
+
+      if (sec <= 0) {
+        // 예식 시각이 지났어도 그날 하루는 '오늘'로 남긴다
+        var midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        dd.textContent = midnight.getTime() === weddingDay.getTime()
+          ? '오늘은 저희가 결혼하는 날입니다'
+          : '함께해 주셔서 감사합니다';
+        return false;   // 더 셀 것이 없다 — 타이머를 멈춘다
+      }
+
       dd.innerHTML = '';
-      dd.appendChild(document.createTextNode((C.groom.name || '신랑') + ' · ' + (C.bride.name || '신부') + '의 결혼식이 '));
-      var b2 = document.createElement('b');
-      b2.textContent = left + '일';
-      dd.appendChild(b2);
-      dd.appendChild(document.createTextNode(' 남았습니다'));
-    } else if (left === 0) {
-      dd.textContent = '오늘은 저희가 결혼하는 날입니다';
-    } else {
-      dd.textContent = '함께해 주셔서 감사합니다';
+      dd.appendChild(document.createTextNode(names + '의 결혼식이'));
+      dd.appendChild(document.createElement('br'));
+      [[String(Math.floor(sec / 86400)), '일'],
+       [pad(Math.floor(sec / 3600) % 24), '시간'],
+       [pad(Math.floor(sec / 60) % 60), '분'],
+       [pad(sec % 60), '초']].forEach(function (u) {
+        var b = document.createElement('b');
+        b.textContent = u[0];
+        dd.appendChild(b);
+        dd.appendChild(document.createTextNode(u[1] + ' '));
+      });
+      dd.appendChild(document.createTextNode('남았습니다'));
     }
+
+    tickWhileVisible(dd, renderDday);
   }
 
   /* =============================================================
@@ -363,78 +453,6 @@
   })();
 
   /* =============================================================
-     함께한 시간
-     ============================================================= */
-  (function together() {
-    var T = C.together || {};
-    var since = new Date(T.since);
-    if (!T.enabled || isNaN(since.getTime())) { return; }
-
-    var sec = $('#together');
-    sec.hidden = false;
-    var out = $('#togetherCounter');
-
-    function tick() {
-      var now = new Date();
-      var diff = Math.max(0, now - since);
-      var years = now.getFullYear() - since.getFullYear();
-      var anniv = new Date(since.getTime());
-      anniv.setFullYear(since.getFullYear() + years);
-      if (anniv > now) { years--; anniv.setFullYear(since.getFullYear() + years); }
-
-      var rest = now - anniv;
-      var days = Math.floor(rest / 86400000);
-      var hrs  = Math.floor(rest / 3600000) % 24;
-      var mins = Math.floor(rest / 60000) % 60;
-      var secs = Math.floor(rest / 1000) % 60;
-
-      out.innerHTML = '';
-      if (years > 0) { out.appendChild(unit(years, '년')); }
-      out.appendChild(unit(days, '일'));
-      out.appendChild(document.createElement('br'));
-      out.appendChild(unit(hrs, '시간'));
-      out.appendChild(unit(mins, '분'));
-      out.appendChild(unit(secs, '초'));
-
-      if (diff === 0) { out.textContent = '함께한 시간을 세는 중입니다'; }
-    }
-    function unit(n, label) {
-      var frag = document.createDocumentFragment();
-      var b = document.createElement('b');
-      b.textContent = n;
-      var s = document.createElement('small');
-      s.textContent = label + ' ';
-      frag.appendChild(b);
-      frag.appendChild(s);
-      return frag;
-    }
-    tick();
-
-    // 화면에 보이지 않으면 세지 않는다.
-    // 청첩장은 열어둔 채 방치되는 일이 많아, 매초 DOM 을 다시 만들면 배터리만 쓴다.
-    //
-    // 단, 기본값은 "돌아가는 쪽"이다(fail-open).
-    // IntersectionObserver 가 콜백을 늦게 주거나 아예 주지 않는 환경이 있는데,
-    // 기본값을 멈춤으로 두면 카운터가 로드 시점 값에 얼어붙어 고장난 것처럼 보인다.
-    // 관찰자가 "화면 밖"이라고 확인해 준 경우에만 끈다.
-    var timer = null;
-    var onScreen = true;
-
-    function start() { if (!timer) { tick(); timer = setInterval(tick, 1000); } }
-    function stop() { if (timer) { clearInterval(timer); timer = null; } }
-    function sync() { if (onScreen && !document.hidden) { start(); } else { stop(); } }
-
-    if ('IntersectionObserver' in window) {
-      new IntersectionObserver(function (entries) {
-        onScreen = entries[entries.length - 1].isIntersecting;
-        sync();
-      }, { threshold: 0 }).observe(sec);
-    }
-    document.addEventListener('visibilitychange', sync);
-    sync();
-  })();
-
-  /* =============================================================
      마음 전하실 곳
      ============================================================= */
   (function accounts() {
@@ -530,56 +548,6 @@
     if (!GAS) { return Promise.reject(new Error('NO_ENDPOINT')); }
     return fetch(GAS + '?action=list&t=' + Date.now()).then(function (r) { return r.json(); });
   }
-
-  /* =============================================================
-     참석 여부
-     ============================================================= */
-  (function rsvp() {
-    var R = C.rsvp || {};
-    if (!R.enabled) { return; }
-    $('#rsvp').hidden = false;
-    if (R.message) { appendLines($('#rsvpMessage'), R.message); }
-
-    var form = $('#rsvpForm');
-    var err = $('#rsvpError');
-
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      err.hidden = true;
-      var submit = form.querySelector('button[type="submit"]');
-      submit.disabled = true;
-
-      var data = new FormData(form);
-      api({
-        action: 'rsvp',
-        side: data.get('side'),
-        attend: data.get('attend'),
-        name: (data.get('name') || '').trim(),
-        count: data.get('count'),
-        meal: data.get('meal'),
-        memo: (data.get('memo') || '').trim()
-      }).then(function (res) {
-        if (!res || !res.ok) { throw new Error(res && res.error || 'FAIL'); }
-        localStorage.setItem('rsvpDone', '1');
-        closeSheet($('#rsvpSheet'));
-        form.reset();
-        toast('참석 여부를 전해드렸습니다. 감사합니다.');
-      }).catch(function (e2) {
-        err.hidden = false;
-        err.textContent = e2.message === 'NO_ENDPOINT'
-          ? '아직 제출 기능이 연결되지 않았습니다. (gasUrl 설정 필요)'
-          : '전송에 실패했습니다. 잠시 후 다시 시도해 주세요.';
-      }).then(function () { submit.disabled = false; });
-    });
-
-    if (R.autoPopup && GAS && !localStorage.getItem('rsvpDone') && !localStorage.getItem('rsvpSkip')) {
-      setTimeout(function () {
-        if (document.querySelector('.sheet:not([hidden])')) { return; }
-        localStorage.setItem('rsvpSkip', '1');
-        openSheet($('#rsvpSheet'));
-      }, 1600);
-    }
-  })();
 
   /* =============================================================
      방명록

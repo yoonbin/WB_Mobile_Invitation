@@ -94,7 +94,19 @@ body {
   letter-spacing: -.01em;
   overflow-x: hidden;
 }
-img { display: block; max-width: 100%; }
+/* 사진 저장·복사를 어렵게 한다.
+   -webkit-touch-callout: 길게 눌렀을 때 '이미지 저장' 메뉴가 뜨지 않게
+   user-select / drag: 끌어서 복사하거나 선택하지 못하게
+   ※ 완전한 차단은 불가능하다(화면 캡처·개발자도구는 못 막는다). 마음먹은 사람은
+     가져갈 수 있고, 이건 '무심코 저장'을 막는 정도의 장치다. */
+img {
+  display: block;
+  max-width: 100%;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
 button { font: inherit; color: inherit; cursor: pointer; }
 a { color: inherit; }
 
@@ -212,10 +224,17 @@ b { font-weight: 400; font-variant-numeric: tabular-nums; }
     line-height: 1;
     color: var(--gold-text);
 }
+/* 날짜·장소를 위아래 가는 선으로 감싼다. */
+.cover__when {
+  margin: 26px auto 0;
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
 /* 한글 날짜라 자간을 확 줄인다. .22em 은 라틴 숫자용이었고
    '2026년 11월 22일 일요일 오후 2시' 에 그대로 쓰면 좁은 화면에서 넘친다. */
 .cover__date {
-  margin: 26px 0 4px;
+  margin: 0 0 4px;
   font-family: var(--display);
   font-size: 1.0625rem;
   letter-spacing: .02em;
@@ -228,28 +247,6 @@ b { font-weight: 400; font-variant-numeric: tabular-nums; }
   font-size: 1.0625rem;
   letter-spacing: .02em;
   color: var(--ink-soft);
-}
-
-.scroll-cue {
-  margin: 44px auto 0;
-  width: 1px;
-  height: 46px;
-  background: var(--line);
-  position: relative;
-  overflow: hidden;
-}
-.scroll-cue span {
-  position: absolute;
-  inset: 0 auto auto 0;
-  width: 1px;
-  height: 16px;
-  background: var(--forest);
-  animation: cue 2.2s var(--ease) infinite;
-}
-@keyframes cue {
-  0%   { transform: translateY(-16px); opacity: 0; }
-  40%  { opacity: 1; }
-  100% { transform: translateY(46px); opacity: 0; }
 }
 
 /* =============================================================
@@ -375,9 +372,13 @@ b { font-weight: 400; font-variant-numeric: tabular-nums; }
    text-align: justify 만으로는 정렬이 걸리지 않는다. */
 .family {
   display: inline-grid;
-  gap: 14px;
+  gap: 16px;
   font-family: var(--display);
-  font-size: 0.9375rem;
+  /* 폭에 따라 글자가 커지고 작아진다.
+     - 넓은 화면: 커져서 좌우 빈 공간이 줄어든다
+     - 좁은 화면이나 휴대폰 '글자 크게' 설정: 작아져서 두 줄로 꺾이지 않는다
+     고정 크기(0.9375rem)로 두면 여유가 19px 밖에 없어 글꼴을 조금만 키워도 꺾였다. */
+  font-size: clamp(0.8125rem, 5vw, 1.125rem);
   letter-spacing: .04em;
   color: var(--ink);
 }
@@ -393,8 +394,11 @@ b { font-weight: 400; font-variant-numeric: tabular-nums; }
   gap: 0 10px;
   align-items: baseline;
 }
+/* 어떤 폭에서도 어절 중간에서 꺾이지 않게 한다. 폭이 모자라면 위 clamp 가 글자를 줄인다. */
+.family__parents,
+.family__child { white-space: nowrap; }
 .family__parents { text-align: right; color: var(--ink-soft); }
-.family__role { text-align: center; color: var(--ink-soft); }
+.family__role { text-align: center; color: var(--ink-soft); white-space: nowrap; }
 .family__child { text-align: left; font-size: 1.0625rem; letter-spacing: .12em; }
 .contact-open { margin-top: 30px; }
 
@@ -408,6 +412,15 @@ b { font-weight: 400; font-variant-numeric: tabular-nums; }
   letter-spacing: .08em;
   color: var(--forest);
 }
+/* 달력 위 사진 (config.calendar.image) */
+.cal-photo {
+  max-width: 320px;
+  margin: 0 auto 30px;
+  overflow: hidden;
+  border-radius: var(--radius);
+}
+.cal-photo img { width: 100%; height: auto; }
+
 /* 월 표시 — 달력 위에 핑크로. 제목과 같은 계열이라 강조 글꼴을 쓴다. */
 .cal__month {
   margin: 0 0 22px;
@@ -488,13 +501,110 @@ b { font-weight: 400; font-variant-numeric: tabular-nums; }
   line-height: 2.2;
   color: var(--ink-soft);
 }
-/* 숫자는 검정 계열로 둔다. 붉은 계열(동백)은 날짜를 세는 맥락에서
-   불길한 뜻으로 읽힐 수 있다. */
+/* =============================================================
+   D-day 플립 시계
+   -------------------------------------------------------------
+   카드 한 장의 구조 (아래 두 장은 넘어가는 동안에만 보인다):
+     .flip__top     위 절반 — 항상 '새 값'
+     .flip__bottom  아래 절반 — 넘어가기 전까지 '이전 값'
+     .flip__flap--top     위에 겹쳐 '이전 값'을 보여주며 뒤로 접힌다
+     .flip__flap--bottom  아래에 겹쳐 '새 값'을 들고 앞으로 펴진다
+   숫자를 반씩 잘라 보이려면 글자의 줄높이를 카드 높이와 같게 두고,
+   아래 절반에서는 글자를 위로 50% 밀어 올린다.
+   ============================================================= */
+.flip {
+  --card-w: 46px;
+  --card-h: 52px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 26px 0 0;
+}
+.flip__unit { display: flex; flex-direction: column; align-items: center; gap: 7px; }
+.flip__label { font-size: 0.6875rem; letter-spacing: .06em; color: var(--ink-faint); }
+.flip__card {
+  position: relative;
+  width: var(--card-w);
+  height: var(--card-h);
+  perspective: 180px;
+  font-size: 1.625rem;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+/* 카드 반쪽 공통 */
+.flip__top, .flip__bottom, .flip__flap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50%;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  background: #F3F4F2;
+  backface-visibility: hidden;
+}
+.flip__top, .flip__flap--top {
+  top: 0;
+  align-items: flex-start;
+  border-radius: 5px 5px 0 0;
+  /* 위아래 반쪽 사이의 접힌 자국 */
+  box-shadow: inset 0 -1px 0 rgba(35, 37, 32, .10);
+}
+.flip__bottom, .flip__flap--bottom {
+  bottom: 0;
+  align-items: flex-end;
+  border-radius: 0 0 5px 5px;
+}
+/* 숫자를 반씩 보이는 방법:
+   글자의 줄높이를 카드 전체 높이(--card-h)로 두면 글자가 카드 한가운데 놓인다.
+   위 칸은 align-items: flex-start 로 글자 위쪽을 붙이고, 아래 칸은 flex-end 로
+   글자 아래쪽을 붙인다. 두 칸 모두 높이가 절반이라 overflow 로 잘리면서
+   각각 글자의 위 절반·아래 절반만 남는다.
+   ※ 여기에 translateY 로 다시 밀면 안 된다. flex 정렬이 이미 제자리를 잡아 놓았고,
+     밀면 아래 칸 글자가 표시 창 밖으로 나가 빈칸이 된다(반만 보이던 원인). */
+.flip__card span { line-height: var(--card-h); }
+
+/* 넘어가는 종이 두 장 */
+.flip__flap { z-index: 2; transform-origin: bottom; }
+.flip__flap--bottom { transform-origin: top; z-index: 1; }
+/* 윗장은 중력을 받아 점점 빨라지며 접히고(가속),
+   아랫장은 떨어지다 정지핀에 걸리듯 급히 멈춘다(급감속).
+   튕기는 이징을 쓰지 않는 이유: 실제 split-flap 은 되튀지 않고 딱 걸린다.
+   되튐을 넣으면 기계가 아니라 장난감처럼 보인다. */
+.flip__card.is-flipping .flip__flap--top {
+  animation: flipTop .42s cubic-bezier(.55, .06, .68, .19) forwards;
+}
+.flip__card.is-flipping .flip__flap--bottom {
+  animation: flipBottom .42s cubic-bezier(.17, .84, .44, 1) .42s forwards;
+}
+@keyframes flipTop {
+  from { transform: rotateX(0deg); }
+  to   { transform: rotateX(-90deg); }
+}
+@keyframes flipBottom {
+  from { transform: rotateX(90deg); }
+  to   { transform: rotateX(0deg); }
+}
+/* 넘어가지 않는 동안에는 두 장 모두 숨는다 */
+.flip__card:not(.is-flipping) .flip__flap { display: none; }
+.flip__flap--bottom { transform: rotateX(90deg); }
+
+/* 문장형 D-day (플립 아래) — 스크린리더가 읽는 것도 이 문장이다.
+   숫자만 강조 문구와 같은 연핑크로 둔다(섹션 제목 '갤러리' 와 같은 색).
+   문장 나머지는 --ink-soft 로 두어 읽는 데 무리가 없게 한다. */
+.dday { margin: 18px 0 0; }
 .dday b {
   font-size: 1.0625rem;
   font-weight: 700;
   letter-spacing: .04em;
-  color: var(--ink);
+  color: var(--pink);
+}
+
+@media (max-width: 359px) {
+  .flip { --card-w: 40px; --card-h: 46px; gap: 7px; }
+  .flip__card { font-size: 1.375rem; }
 }
 
 /* =============================================================
@@ -519,6 +629,7 @@ b { font-weight: 400; font-variant-numeric: tabular-nums; }
   transition: transform .5s var(--ease);
 }
 .grid__cell:hover img { transform: scale(1.05); }
+.gallery__more { margin-top: 16px; }
 
 /* =============================================================
    오시는 길
@@ -534,12 +645,43 @@ b { font-weight: 400; font-variant-numeric: tabular-nums; }
 .place-name em { font-style: normal; font-size: 0.84375rem; color: var(--ink-soft); }
 
 .map {
+  position: relative;
   aspect-ratio: 4 / 3;
   border: 1px solid var(--line);
+  border-radius: var(--radius);
   background: var(--paper);
   overflow: hidden;
 }
 .map img { width: 100%; height: 100%; object-fit: cover; }
+/* 지도가 들어가는 자리.
+   iframe 은 기본 크기(300x150)와 2px 테두리를 가진 대체 요소라
+   inset: 0 만으로는 늘어나지 않는다. 폭·높이를 직접 100% 로 줘야
+   박스를 꽉 채운다(이걸 빼면 작은 지도가 회색 여백에 떠 있게 된다). */
+.map__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+/* 지도를 크게 보러 나가는 링크 — 지도 위 오른쪽 아래에 얹는다 */
+.map__open {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(var(--paper-rgb), .92);
+  box-shadow: 0 1px 4px rgba(35, 37, 32, .18);
+  font-size: 0.71875rem;
+  color: var(--forest);
+  text-decoration: none;
+}
 .map__placeholder {
   height: 100%;
   display: flex;
@@ -881,6 +1023,7 @@ b { font-weight: 400; font-variant-numeric: tabular-nums; }
 .input:focus { border-color: var(--gold-text); outline: none; }
 textarea.input { resize: vertical; line-height: 1.7; }
 
+.form__note { margin: 0; font-size: 0.6875rem; line-height: 1.7; color: var(--ink-faint); }
 .form__error { margin: 0; font-size: 0.75rem; color: var(--camellia); }
 .form__actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
 
@@ -964,23 +1107,19 @@ textarea.input { resize: vertical; line-height: 1.7; }
 
 /* =============================================================
    등장 애니메이션
+   -------------------------------------------------------------
+   스크롤할 때 섹션이 떠오르던 연출(.reveal)은 제거했다.
+   표지 진입 연출만 남긴다 — 페이지를 열 때 한 번뿐이고,
+   스크롤을 따라다니며 시선을 끌지 않는다.
    ============================================================= */
-.reveal { opacity: 0; transform: translateY(14px); }
-.reveal.is-in {
-  opacity: 1;
-  transform: none;
-  transition: opacity .8s var(--ease), transform .8s var(--ease);
-}
 .cover .arch__frame,
 .cover__names,
-.cover__date,
-.cover__place,
+.cover__when,
 .arch__crown { animation: fadeUp .9s var(--ease) both; }
 .arch__crown     { animation-delay: .05s; }
 .cover .arch__frame { animation-delay: .15s; }
 .cover__names    { animation-delay: .35s; }
-.cover__date     { animation-delay: .5s; }
-.cover__place    { animation-delay: .58s; }
+.cover__when     { animation-delay: .5s; }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } }
 
 /* 모션을 줄여달라는 요청은 "움직임을 없애달라"이지
@@ -993,21 +1132,20 @@ textarea.input { resize: vertical; line-height: 1.7; }
   html { scroll-behavior: auto; }
 
   /* 장식 — 완전히 정지 */
-  .reveal,
   .cover .arch__frame,
   .arch__crown,
   .cover__names,
-  .cover__date,
-  .cover__place {
+  .cover__when {
     animation: none;
     opacity: 1;
     transform: none;
   }
-  .scroll-cue span,
   .bgm-toggle[aria-pressed="true"] .bgm-toggle__bars i { animation: none; }
   .sheet__panel { animation: none; }
   .grid__cell img { transition: none; }
   .grid__cell:hover img { transform: none; }
+  /* 플립 시계 — 종이가 넘어가는 연출만 끄고 숫자는 그대로 바뀐다 */
+  .flip__flap { display: none !important; }
 
   /* 피드백 — 위치 이동만 없애고 페이드는 유지 */
   .toast {

@@ -254,6 +254,22 @@
   /* =============================================================
      달력 · D-day
      ============================================================= */
+  // 달력 위 사진 (선택)
+  (function calendarPhoto() {
+    var file = (C.calendar && C.calendar.image) || '';
+    if (!file) { return; }
+    var box = $('#calPhoto');
+    var img = document.createElement('img');
+    img.alt = '';
+    img.loading = 'lazy';
+    // 여기서는 자리표시로 대체하지 않는다. 없어도 되는 사진이라
+    // 파일이 없으면 '사진 준비 중' 을 띄우는 대신 조용히 자리를 비운다.
+    img.onerror = function () { box.hidden = true; };
+    img.src = IMG_DIR + file;
+    box.appendChild(img);
+    box.hidden = false;
+  })();
+
   if (hasDate) {
     $('#dateLine').textContent = W.dateText ||
       (weddingAt.getFullYear() + '년 ' + (weddingAt.getMonth() + 1) + '월 ' + weddingAt.getDate() + '일 ' +
@@ -294,7 +310,8 @@
     // 예식 시각(자정이 아니라 config 의 datetime)까지 남은 시간을 매초 센다.
     var weddingDay = new Date(y, m, weddingAt.getDate());   // 예식일 자정
     var dd = $('#dday');
-    var names = (C.groom.name || '신랑') + ' · ' + (C.bride.name || '신부');
+    var flip = makeFlip($('#flip'), [['일', 3], ['시간', 2], ['분', 2], ['초', 2]]);
+    var lastDays = null;
 
     function renderDday() {
       var now = new Date();
@@ -303,28 +320,136 @@
       if (sec <= 0) {
         // 예식 시각이 지났어도 그날 하루는 '오늘'로 남긴다
         var midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        $('#flip').hidden = true;
         dd.textContent = midnight.getTime() === weddingDay.getTime()
           ? '오늘은 저희가 결혼하는 날입니다'
           : '함께해 주셔서 감사합니다';
         return false;   // 더 셀 것이 없다 — 타이머를 멈춘다
       }
 
-      dd.innerHTML = '';
-      dd.appendChild(document.createTextNode(names + '의 결혼식이'));
-      dd.appendChild(document.createElement('br'));
-      [[String(Math.floor(sec / 86400)), '일'],
-       [pad(Math.floor(sec / 3600) % 24), '시간'],
-       [pad(Math.floor(sec / 60) % 60), '분'],
-       [pad(sec % 60), '초']].forEach(function (u) {
+      var parts = [
+        Math.floor(sec / 86400),
+        Math.floor(sec / 3600) % 24,
+        Math.floor(sec / 60) % 60,
+        sec % 60
+      ];
+      flip.set(parts);
+
+      // 플립은 aria-hidden 이므로 스크린리더가 읽을 문장을 따로 둔다.
+      // 날짜(일)만 쓰므로 값이 바뀌는 하루에 한 번만 다시 그린다 —
+      // 매초 다시 만들면 스크린리더가 같은 문장을 계속 다시 읽는다.
+      if (parts[0] !== lastDays) {
+        lastDays = parts[0];
+        dd.innerHTML = '';
+        // ♥ 는 장식이라 읽지 않게 한다. '원빈 하트 경란' 으로 읽히면 어색하다.
+        var heart = document.createElement('span');
+        heart.setAttribute('aria-hidden', 'true');
+        heart.textContent = ' ♥ ';
+
+        dd.appendChild(document.createTextNode(givenName(C.groom) || '신랑'));
+        dd.appendChild(heart);
+        dd.appendChild(document.createTextNode((givenName(C.bride) || '신부') + '의 결혼식이 '));
         var b = document.createElement('b');
-        b.textContent = u[0];
+        b.textContent = String(parts[0]);
         dd.appendChild(b);
-        dd.appendChild(document.createTextNode(u[1] + ' '));
-      });
-      dd.appendChild(document.createTextNode('남았습니다'));
+        dd.appendChild(document.createTextNode('일 남았습니다.'));
+      }
     }
 
     tickWhileVisible(dd, renderDday);
+  }
+
+  /* =============================================================
+     플립 시계
+     -------------------------------------------------------------
+     units: [[라벨, 자릿수], ...]. set([값들]) 로 갱신한다.
+     값이 바뀐 칸만 종이가 넘어가고, 안 바뀐 칸은 건드리지 않는다
+     (매초 네 칸이 전부 펄럭이면 시끄럽다).
+     ============================================================= */
+  function reduceMotion() {
+    return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  // 종이 두 장이 넘어가는 데 걸리는 시간. style.css 의 .flip__flap 애니메이션
+  // (0.42s + 0.42s 지연)과 맞춰야 한다. 한쪽만 고치면 카드가 덜 넘어간 채로 굳는다.
+  var FLIP_MS = 880;
+
+  function makeFlip(root, units) {
+    if (!root) { return { set: function () {} }; }
+    var cards = [];
+
+    units.forEach(function (u) {
+      var unit = document.createElement('div');
+      unit.className = 'flip__unit';
+
+      var card = document.createElement('div');
+      card.className = 'flip__card';
+      card.appendChild(half('flip__top', ''));
+      card.appendChild(half('flip__bottom', ''));
+      card.appendChild(half('flip__flap flip__flap--top', ''));
+      card.appendChild(half('flip__flap flip__flap--bottom', ''));
+
+      var label = document.createElement('span');
+      label.className = 'flip__label';
+      label.textContent = u[0];
+
+      unit.appendChild(card);
+      unit.appendChild(label);
+      root.appendChild(unit);
+      cards.push({ el: card, digits: u[1], value: null });
+    });
+
+    function half(cls, text) {
+      var d = document.createElement('div');
+      d.className = cls;
+      var s = document.createElement('span');
+      s.textContent = text;
+      d.appendChild(s);
+      return d;
+    }
+    function text(card, cls, v) { card.querySelector('.' + cls + ' span').textContent = v; }
+
+    function set(values) {
+      values.forEach(function (raw, i) {
+        var c = cards[i];
+        var next = String(raw);
+        while (next.length < c.digits) { next = '0' + next; }
+        if (next === c.value) { return; }
+
+        var prev = c.value;
+        c.value = next;
+
+        // 첫 그림, 그리고 모션을 줄여 달라고 한 경우에는 넘기는 연출 없이 값만 앉힌다.
+        // 후자에서 종이는 CSS 로 숨겨져 animationend 가 오지 않으므로,
+        // 여기서 아래 절반까지 확정하지 않으면 옛 숫자가 그대로 남는다.
+        if (prev === null || reduceMotion()) {
+          text(c.el, 'flip__top', next);
+          text(c.el, 'flip__bottom', next);
+          return;
+        }
+
+        text(c.el, 'flip__top', next);          // 위 절반은 곧바로 새 값
+        text(c.el, 'flip__bottom', prev);       // 아래 절반은 넘어갈 때까지 이전 값
+        text(c.el, 'flip__flap--top', prev);    // 접히는 종이 = 이전 값
+        text(c.el, 'flip__flap--bottom', next); // 펴지는 종이 = 새 값
+
+        c.el.classList.remove('is-flipping');
+        void c.el.offsetWidth;                  // 애니메이션을 처음부터 다시 돌린다
+        c.el.classList.add('is-flipping');
+
+        // 종이가 다 넘어가면 아래 절반을 새 값으로 확정한다.
+        // animationend 에 맡기지 않는 이유: 배경 탭처럼 브라우저가 애니메이션을
+        // 아예 돌리지 않는 상황에서는 그 이벤트가 오지 않아 카드가 중간 상태로 굳는다.
+        // 시간으로 끊으면 애니메이션이 돌든 안 돌든 항상 제자리를 찾는다.
+        clearTimeout(c.timer);
+        c.timer = setTimeout(function () {
+          c.el.classList.remove('is-flipping');
+          text(c.el, 'flip__bottom', c.value);
+        }, FLIP_MS);
+      });
+    }
+
+    return { set: set };
   }
 
   /* =============================================================
@@ -334,7 +459,23 @@
   (function buildGallery() {
     var grid = $('#galleryGrid');
     if (!photos.length) { $('#gallery').hidden = true; return; }
-    photos.forEach(function (file, idx) {
+
+    // 처음에는 previewCount 장만 만든다. 나머지는 '더보기'를 눌렀을 때 만든다.
+    // 미리 만들어 두고 숨기면 안 볼 사진까지 브라우저가 준비하게 된다.
+    var preview = Number(C.gallery && C.gallery.previewCount) || photos.length;
+    var shown = 0;
+    var moreBtn = $('#galleryMore');
+
+    function addCells(upto) {
+      for (; shown < upto && shown < photos.length; shown++) {
+        grid.appendChild(cell(photos[shown], shown));
+      }
+      var left = photos.length - shown;
+      moreBtn.hidden = left <= 0;
+      moreBtn.textContent = '사진 더보기 (' + left + '장)';
+    }
+
+    function cell(file, idx) {
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'grid__cell';
@@ -345,8 +486,18 @@
       withFallback(img, file);
       btn.appendChild(img);
       btn.addEventListener('click', function () { openLightbox(idx); });
-      grid.appendChild(btn);
+      return btn;
+    }
+
+    // 펼친 뒤에는 되돌릴 일이 없으므로 한 번에 전부 연다.
+    moreBtn.addEventListener('click', function () {
+      var first = shown;                       // 새로 생긴 첫 사진
+      addCells(photos.length);
+      var target = grid.children[first];
+      if (target) { target.focus(); }          // 키보드·스크린리더가 이어서 읽도록
     });
+
+    addCells(preview);
   })();
 
   var lb = $('#lightbox'), lbImg = $('#lbImg'), lbCount = $('#lbCount');
@@ -420,15 +571,47 @@
       ? 'tmap://route?goalname=' + encodeURIComponent(name) + '&goalx=' + W.lng + '&goaly=' + W.lat
       : 'tmap://search?name=' + encodeURIComponent(W.venue || name);
 
-    // 지도 이미지가 있으면 자리표시를 대체
-    var mapImg = new Image();
-    mapImg.onload = function () {
+    /* ---------- 지도 ----------
+       발급받을 키도, 찾아 넣을 좌표도 없다. 주소(또는 좌표가 있으면 좌표)를
+       그대로 넘기면 지도가 그 자리를 찾아 준다.
+
+       왜 네이버 지도를 직접 띄우지 않는가:
+       네이버 지도 API 는 네이버클라우드 콘솔에서 키를 발급받고 배포 도메인까지
+       등록해야 한다. 청첩장 하나 띄우자고 넘기에는 문턱이 높다.
+       대신 '네이버지도로 보기' 버튼을 얹어 두어, 누르면 네이버 지도로 넘어간다
+       (그 링크는 키가 필요 없다). 아래 길찾기 버튼들도 마찬가지다.
+
+       핀이 엉뚱한 곳에 찍히면 config 의 lat/lng 를 채운다 — 그러면 주소 대신
+       좌표를 쓴다. 교정 수단은 이 하나로 충분하다. */
+    (function showMap() {
+      // 예식장 이름과 주소를 붙여 보내면 검색이 흔들린다("제주 헤리티크제주
+      // 제주특별자치도 제주시 한북로 154" 처럼). 주소만 보내는 쪽이 확실하다.
+      var place = hasXY ? (W.lat + ',' + W.lng) : (W.address || W.venue || '');
+      if (!place) { return; }   // 주소도 좌표도 없으면 안내 문구를 그대로 둔다
+
       var box = $('#mapBox');
-      box.innerHTML = '';
-      mapImg.alt = name + ' 위치 지도';
-      box.appendChild(mapImg);
-    };
-    mapImg.src = IMG_DIR + 'map.jpg';
+      var f = document.createElement('iframe');
+      f.className = 'map__canvas';
+      f.title = name + ' 위치 지도';
+      f.loading = 'lazy';
+      f.referrerPolicy = 'no-referrer-when-downgrade';
+      f.setAttribute('allowfullscreen', '');
+      f.src = 'https://www.google.com/maps?q=' + encodeURIComponent(place) +
+              '&hl=ko&z=16&output=embed';
+      box.insertBefore(f, box.firstChild);
+
+      // 지도를 넣는 즉시 안내 문구를 치운다.
+      // onload 를 기다리지 않는 이유: 지도가 안 뜨는 경우 iframe 안에 구글이
+      // 자기 오류 화면을 보여주므로 우리 안내 문구가 겹칠 뿐이다.
+      $('#mapPlaceholder').hidden = true;
+
+      // 자세히 보거나 길찾기는 네이버지도로 넘긴다(이 링크는 키가 필요 없다).
+      var a = link('https://map.naver.com/p/search/' + q, '네이버지도로 보기');
+      a.className = 'map__open';
+      a.target = '_blank';
+      a.rel = 'noopener';
+      box.appendChild(a);
+    })();
 
     var t = $('#transport');
     (W.transport || []).forEach(function (item) {
@@ -564,6 +747,40 @@
     var items = [];
     var shownCount = 5;
 
+    /* 삭제 권한을 비밀번호 대신 '이 기기가 쓴 글인가'로 판단한다.
+       글을 남길 때 임의의 토큰을 만들어 서버에 함께 보내고 이 기기에도 저장해 둔다.
+       삭제 버튼은 토큰을 가진 글에만 보이고, 서버도 토큰이 맞아야 지운다.
+       하객이 외울 것이 없고, 남의 글을 지우려면 토큰을 알아야 한다.
+       한계: 기기를 바꾸거나 브라우저 저장소를 지우면 본인 글도 못 지운다
+             (그때는 신랑·신부가 구글 시트에서 직접 지우면 된다). */
+    var MINE_KEY = 'gbMine';
+    function mine() {
+      try { return JSON.parse(localStorage.getItem(MINE_KEY)) || {}; }
+      catch (e) { return {}; }
+    }
+    function remember(id, token) {
+      var m = mine();
+      m[id] = token;
+      try { localStorage.setItem(MINE_KEY, JSON.stringify(m)); } catch (e) { /* 저장 못 해도 글은 남는다 */ }
+    }
+    function forget(id) {
+      var m = mine();
+      delete m[id];
+      try { localStorage.setItem(MINE_KEY, JSON.stringify(m)); } catch (e) {}
+    }
+    function newToken() {
+      if (window.crypto && window.crypto.randomUUID) { return window.crypto.randomUUID(); }
+      if (window.crypto && window.crypto.getRandomValues) {
+        var a = new Uint8Array(16);
+        window.crypto.getRandomValues(a);
+        return Array.prototype.map.call(a, function (b) {
+          return ('0' + b.toString(16)).slice(-2);
+        }).join('');
+      }
+      // 구형 브라우저 예비책. 추측 난이도는 낮지만 방명록에는 충분하다.
+      return 'x' + Date.now().toString(36) + Math.random().toString(36).slice(2);
+    }
+
     function render() {
       listEl.innerHTML = '';
       if (!items.length) {
@@ -587,15 +804,18 @@
         msg.className = 'gb-item__msg';
         msg.textContent = it.message;
 
-        var del = document.createElement('button');
-        del.type = 'button';
-        del.className = 'gb-item__del';
-        del.textContent = '삭제';
-        del.addEventListener('click', function () { removeEntry(it.id); });
-
         li.appendChild(top);
         li.appendChild(msg);
-        li.appendChild(del);
+
+        // 이 기기에서 남긴 글에만 삭제 버튼을 붙인다
+        if (mine()[it.id]) {
+          var del = document.createElement('button');
+          del.type = 'button';
+          del.className = 'gb-item__del';
+          del.textContent = '삭제';
+          del.addEventListener('click', function () { removeEntry(it.id); });
+          li.appendChild(del);
+        }
         listEl.appendChild(li);
       });
       moreBtn.hidden = items.length <= shownCount;
@@ -608,14 +828,18 @@
     }
 
     function removeEntry(id) {
-      var pw = window.prompt('작성 시 입력한 비밀번호 4자리를 입력해 주세요.');
-      if (!pw) { return; }
-      api({ action: 'delete', id: id, password: pw }).then(function (res) {
+      var token = mine()[id];
+      if (!token) { return; }
+      if (!window.confirm('남기신 축하 메시지를 지울까요?')) { return; }
+      api({ action: 'delete', id: id, token: token }).then(function (res) {
         if (!res || !res.ok) { throw new Error(res && res.error || 'FAIL'); }
+        forget(id);
         toast('삭제했습니다');
         load();
       }).catch(function (e) {
-        toast(e.message === 'WRONG_PASSWORD' ? '비밀번호가 맞지 않습니다' : '삭제하지 못했습니다');
+        // 서버에 이미 없는 글이면 이 기기의 기록도 정리한다
+        if (e.message === 'NOT_FOUND') { forget(id); load(); }
+        toast('삭제하지 못했습니다');
       });
     }
 
@@ -642,13 +866,16 @@
       submit.disabled = true;
 
       var data = new FormData(form);
+      var token = newToken();
       api({
         action: 'guestbook',
         name: (data.get('name') || '').trim(),
         message: (data.get('message') || '').trim(),
-        password: data.get('password')
+        token: token
       }).then(function (res) {
         if (!res || !res.ok) { throw new Error(res && res.error || 'FAIL'); }
+        // 서버가 준 id 와 짝지어 저장해야 나중에 이 글을 지울 수 있다
+        if (res.id) { remember(res.id, token); }
         closeSheet($('#gbSheet'));
         form.reset();
         toast('축하 메시지를 남겼습니다. 감사합니다.');
@@ -797,23 +1024,20 @@
   });
 
   /* =============================================================
-     스크롤 등장
+     사진 저장·복사 막기
+     -------------------------------------------------------------
+     CSS 로 길게 누르기·끌기·선택을 막고, 여기서 우클릭 메뉴와
+     끌어놓기를 한 번 더 막는다.
+
+     ※ 완전히 막을 수는 없다. 화면 캡처와 개발자도구는 어떤 방법으로도 못 막고,
+       주소를 알면 사진 파일을 그대로 받을 수 있다.
+       '무심코 저장'을 막는 문턱일 뿐이라는 점을 전제로 둔 코드다.
      ============================================================= */
-  (function reveal() {
-    var targets = $$('.reveal');
-    if (!('IntersectionObserver' in window)) {
-      targets.forEach(function (t) { t.classList.add('is-in'); });
-      return;
-    }
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (en) {
-        if (en.isIntersecting) {
-          en.target.classList.add('is-in');
-          io.unobserve(en.target);
-        }
-      });
-    }, { rootMargin: '0px 0px -12% 0px', threshold: .08 });
-    targets.forEach(function (t) { io.observe(t); });
-  })();
+  document.addEventListener('contextmenu', function (e) {
+    if (e.target && e.target.tagName === 'IMG') { e.preventDefault(); }
+  });
+  document.addEventListener('dragstart', function (e) {
+    if (e.target && e.target.tagName === 'IMG') { e.preventDefault(); }
+  });
 
 })();

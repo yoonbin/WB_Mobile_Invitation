@@ -38,7 +38,7 @@
     <!-- ?v= 뒤 숫자는 캐시 번호입니다.
          내용을 고쳐 다시 올렸는데 하객 휴대폰에서 예전 내용이 그대로 보인다면,
          아래 세 곳(style.css / config.js / main.js)의 숫자를 1씩 올리세요. -->
-    <link rel="stylesheet" href="assets/css/style.css?v=14">
+    <link rel="stylesheet" href="assets/css/style.css?v=21">
 </head>
 <body>
 
@@ -93,16 +93,17 @@
       <span class="cover__name" data-bind="bride.name"></span>
     </h1>
 
-    <p class="cover__date" id="coverDate"></p>
-    <p class="cover__place">
-      <span data-bind="wedding.venue"></span> <span data-bind="wedding.hall"></span>
-    </p>
-
-    <div class="scroll-cue" aria-hidden="true"><span></span></div>
+    <!-- 날짜·장소를 위아래 선으로 감싼 한 덩어리로 둔다 -->
+    <div class="cover__when">
+      <p class="cover__date" id="coverDate"></p>
+      <p class="cover__place">
+        <span data-bind="wedding.venue"></span> <span data-bind="wedding.hall"></span>
+      </p>
+    </div>
   </header>
 
   <!-- ============ 인사말 ============ -->
-  <section class="section reveal" id="greeting" aria-labelledby="greetingTitle">
+  <section class="section" id="greeting" aria-labelledby="greetingTitle">
     <h2 class="section__title" id="greetingTitle" data-bind="greeting.title"></h2>
     <p class="prose" id="greetingBody"></p>
 
@@ -116,8 +117,11 @@
   </section>
 
   <!-- ============ 예식 안내 · 달력 ============ -->
-  <section class="section section--tint reveal" id="calendar" aria-labelledby="calendarTitle">
+  <section class="section section--tint" id="calendar" aria-labelledby="calendarTitle">
     <h2 class="section__title" id="calendarTitle">예식 안내</h2>
+
+    <!-- 달력 위 사진 (config.calendar.image 가 있을 때만 JS 가 채운다) -->
+    <div class="cal-photo" id="calPhoto" hidden></div>
 
     <p class="dateline" id="dateLine"></p>
 
@@ -130,18 +134,24 @@
       <div class="cal__grid" id="calGrid"></div>
     </div>
 
+    <!-- D-day 플립 시계.
+         숫자판은 JS 가 만든다. aria-hidden 인 이유는 매초 바뀌는 숫자를
+         스크린리더가 계속 읽으면 방해가 되기 때문이고,
+         같은 내용을 아래 #ddayText 가 한 문장으로 대신 전달한다. -->
+    <div class="flip" id="flip" aria-hidden="true"></div>
     <p class="dday" id="dday"></p>
   </section>
 
   <!-- ============ 갤러리 ============ -->
-  <section class="section reveal" id="gallery" aria-labelledby="galleryTitle">
+  <section class="section" id="gallery" aria-labelledby="galleryTitle">
     <h2 class="section__title" id="galleryTitle">갤러리</h2>
     <div class="grid" id="galleryGrid"></div>
+    <button class="btn btn--ghost gallery__more" type="button" id="galleryMore" hidden></button>
     <p class="hint">사진을 누르면 크게 볼 수 있어요</p>
   </section>
 
   <!-- ============ 오시는 길 ============ -->
-  <section class="section section--tint reveal" id="location" aria-labelledby="locationTitle">
+  <section class="section section--tint" id="location" aria-labelledby="locationTitle">
     <h2 class="section__title" id="locationTitle">오시는 길</h2>
 
     <p class="place-name">
@@ -149,9 +159,12 @@
       <em data-bind="wedding.hall"></em>
     </p>
 
+    <!-- 지도는 config 의 address 만으로 자동으로 뜬다(발급 키 없음).
+         핀이 엉뚱하면 config 의 lat/lng 를 채우면 좌표를 쓴다.
+         주소·좌표가 모두 없을 때만 아래 안내 문구가 남는다. -->
     <div class="map" id="mapBox">
-      <div class="map__placeholder">
-        <span>지도 이미지를 넣으려면<br><code>assets/images/map.jpg</code> 파일을 추가하세요</span>
+      <div class="map__placeholder" id="mapPlaceholder">
+        <span>지도를 불러오지 못했습니다<br><code>config.js</code> 의 <code>address</code> 를 확인해 주세요</span>
       </div>
     </div>
 
@@ -171,14 +184,14 @@
   </section>
 
   <!-- ============ 마음 전하실 곳 ============ -->
-  <section class="section section--tint reveal" id="account" aria-labelledby="accountTitle" hidden>
+  <section class="section section--tint" id="account" aria-labelledby="accountTitle" hidden>
     <h2 class="section__title" id="accountTitle">마음 전하실 곳</h2>
     <p class="prose prose--sm" id="accountMessage"></p>
     <div class="accordions" id="accountList"></div>
   </section>
 
   <!-- ============ 방명록 ============ -->
-  <section class="section section--tint reveal" id="guestbook" aria-labelledby="guestbookTitle" hidden>
+  <section class="section section--tint" id="guestbook" aria-labelledby="guestbookTitle" hidden>
     <h2 class="section__title" id="guestbookTitle">방명록</h2>
     <p class="prose prose--sm">축하의 한마디를 남겨주세요.</p>
 
@@ -191,7 +204,7 @@
 
   <!-- ============ 마무리 ============ -->
   <!-- id="end" 는 '맨 아래로' 버튼의 도착지다. -->
-  <footer class="closing reveal" id="end">
+  <footer class="closing" id="end">
     <div class="rule rule--wide" aria-hidden="true"></div>
     <p class="closing__line">함께해 주시는 모든 분께 감사드립니다</p>
     <p class="closing__names">
@@ -233,10 +246,7 @@
         <span class="form__label">축하 메시지</span>
         <textarea class="input" name="message" rows="4" maxlength="300" required></textarea>
       </label>
-      <label class="form__row">
-        <span class="form__label">비밀번호 <em class="opt">(숫자 4자리 · 삭제할 때 필요합니다)</em></span>
-        <input class="input" type="password" name="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required autocomplete="off">
-      </label>
+      <p class="form__note">남기신 글은 이 기기에서만 삭제할 수 있습니다.</p>
       <p class="form__error" id="gbError" role="alert" hidden></p>
       <div class="form__actions">
         <button class="btn btn--ghost" type="button" data-close>닫기</button>
@@ -249,7 +259,7 @@
 <!-- ============ 토스트 ============ -->
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="assets/js/config.js?v=14"></script>
-<script src="assets/js/main.js?v=14"></script>
+<script src="assets/js/config.js?v=21"></script>
+<script src="assets/js/main.js?v=21"></script>
 </body>
 </html>

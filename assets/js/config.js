@@ -141,7 +141,7 @@ window.CONFIG = {
   /* ---------- 9. 배경음악 ---------- */
   bgm: {
     // assets/audio/ 폴더에 mp3를 넣고 파일명을 적으세요. 비우면 버튼이 숨겨집니다.
-      file: 'bgm-4-gentle-piano.mp3',
+      file: 'bgmWedding.mp3',
     // 자동재생은 대부분의 휴대폰에서 차단됩니다. 버튼을 눌러야 재생됩니다.
     autoplay: true
   },

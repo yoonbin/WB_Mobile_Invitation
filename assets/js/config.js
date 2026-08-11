@@ -16,7 +16,7 @@ window.CONFIG = {
     // ※ 카카오톡 링크 미리보기(제목·설명·이미지)는 여기가 아니라
     //    index.html 위쪽의 og: 태그에서 고쳐야 합니다.
     //    카카오톡은 자바스크립트를 실행하지 않아서 이 파일 값은 반영되지 않습니다.
-    description: '2026년 11월 22일 일요일 오후 2시, 제주 헤리스가든 1층 글라스홀'
+    description: '2026년 11월 22일 일요일 오후 2시, 헤리티크 제주 1층 글라스홀'
   },
 
   /* ---------- 2. 예식 일시 ---------- */
@@ -26,22 +26,32 @@ window.CONFIG = {
     // 화면에 보여줄 날짜 문구
     dateText: '2026년 11월 22일 일요일 오후 2시',
     // 예식장
-    venue: '제주 헤리티크제주',
+    venue: '헤리티크 제주',
     hall: '1층 글라스홀',
     address: '제주특별자치도 제주시 한북로 154',
     addressDetail: '',              // 예: '(오등동 405)' — 없으면 ''
     venueTel: '',                   // 예식장 대표번호. 예: '064-000-0000'
 
-    // 지도는 위 address 만으로 자동으로 뜹니다. 발급받을 키는 없습니다.
+    // ── 네이버 지도 ─────────────────────────────────────────
+    // 아래 세 칸을 모두 채워야 지도가 뜹니다. 하나라도 비면 안내 문구만 나옵니다
+    // (길찾기 버튼들은 키 없이 언제나 동작합니다).
     //
-    // 핀이 조금 엉뚱한 곳에 찍히면 아래 좌표를 채우세요(그때만 필요합니다).
-    // 넣는 법: 네이버지도 웹에서 예식장을 찾아 그 위치를 우클릭 → '좌표 복사'
-    lat: '',                        // 위도  예: '33.4512345'
-    lng: '',                        // 경도  예: '126.5012345'
+    // 1) 좌표 — 네이버지도 웹에서 예식장을 찾아 그 위치를 우클릭 → '좌표 복사'
+    // 예식장 홈페이지(heritiquejeju.com)의 지도 코드에서 가져온 좌표입니다.
+    // 역지오코딩으로 '한북로, 오등동, 제주시(63241)' 임을 확인했습니다.
+    lat: '33.4629213',              // 위도
+    lng: '126.5324309',             // 경도
+
+    // 2) Client ID — https://console.ncloud.com
+    //    Services → AI·NAVER API → Maps → 애플리케이션 등록
+    //    → Web Dynamic Map 체크 → 서비스 URL 에 배포 주소 등록 → Client ID 복사
+    //    ※ 배포 주소를 등록하지 않으면 지도가 인증 오류로 안 뜹니다.
+    //      GitHub Pages 라면 https://아이디.github.io 를 넣으세요.
+      naverMapClientId: '97xrhzril4',
 
     // 교통 안내 (필요 없는 줄은 지우세요)
     transport: [
-      { label: '자가용', desc: '내비게이션에 “제주 헤리스가든” 검색' },
+      { label: '자가용', desc: '내비게이션에 “헤리티크 제주” 검색' },
       { label: '주차', desc: '예식장 전용 주차장 이용' }
     ]
   },
@@ -65,21 +75,20 @@ window.CONFIG = {
     ]
   },
 
-  /* ---------- 4. 신랑 · 신부 · 혼주 ---------- */
-  /* 고인이신 부모님은 이름 앞에 '故 '를 직접 붙이세요. 예: '故 오성택' */
+  /* ---------- 4. 신랑 · 신부 · 혼주 ---------- */ 
   /* 이름은 성까지 적으세요. 표지·마무리 서명·연락처는 이 값을 그대로 쓰고,
      혼주 소개 줄("오성택 · 이해정의 아들 원빈")에서는 성이 자동으로 빠집니다. */
   groom: {
     name: '오원빈',
     role: '아들',
-    tel: '010-0000-0000',                        // 예: '010-0000-0000' — 비우면 연락처 버튼 숨김
-    father: { name: '오성택', tel: '010-2222-2222' },
-    mother: { name: '이해정', tel: '010-3333-3333' }
+    tel: '010-7551-0864',                        // 예: '010-0000-0000' — 비우면 연락처 버튼 숨김
+    father: { name: '오성택', tel: '010-8014-3327' },
+    mother: { name: '이해정', tel: '010-9042-1679' }
   },
   bride: {
     name: '김경란',
     role: '딸',
-    tel: '010-1111-1111',
+    tel: '010-4346-8508',
     father: { name: '김봉식', tel: '010-5555-5555' },
     mother: { name: '이순희', tel: '010-6666-6666' }
   },
@@ -88,7 +97,7 @@ window.CONFIG = {
   calendar: {
     // 예식 안내 섹션의 달력 위에 넣을 사진 파일명. assets/images/ 폴더에 두세요.
     // 비워두면 사진 없이 달력만 나옵니다.
-      image: 'gallery-13.jpg'                       // 예: 'calendar.jpg'
+      image: 'gallery-09.jpg'         // 예: 'calendar.jpg'
   },
 
   /* ---------- 6. 갤러리 ---------- */
@@ -104,9 +113,7 @@ window.CONFIG = {
       'gallery-01.jpg', 'gallery-02.jpg', 'gallery-03.jpg',
       'gallery-04.jpg', 'gallery-05.jpg', 'gallery-06.jpg',
       'gallery-07.jpg', 'gallery-08.jpg', 'gallery-09.jpg',
-      'gallery-10.jpg', 'gallery-11.jpg', 'gallery-12.jpg',
-      'gallery-13.jpg', 'gallery-14.jpg', 'gallery-15.jpg',
-      'gallery-16.jpg', 'gallery-17.jpg', 'gallery-18.jpg'
+      'gallery-10.jpg', 'gallery-11.jpg', 'gallery-12.jpg'
     ]
   },
 
@@ -121,14 +128,14 @@ window.CONFIG = {
     ],
     // 항목을 비워두면(bank·number가 '') 그 사람은 목록에서 빠집니다.
     groomSide: [
-      { role: '신랑', name: '오원빈', bank: '1111-123123', number: '11', kakaopay: '' },
-      { role: '아버지', name: '오성택', bank: '2223', number: '22', kakaopay: '' },
-      { role: '어머니', name: '이해정', bank: '3333', number: '33', kakaopay: '' }
+        { role: '신랑', name: '오원빈', bank: '카카오뱅크', number: '3333-16-3918228', kakaopay: '' },
+        { role: '아버지', name: '오성택', bank: '농협은행', number: '963-12-342675', kakaopay: '' },
+        { role: '어머니', name: '이해정', bank: '농협은행', number: '312-0000-4965-91', kakaopay: '' }
     ],
     brideSide: [
-      { role: '신부', name: '김경란', bank: '1234231', number: '44', kakaopay: '' },
-      { role: '아버지', name: '김봉식', bank: '5555', number: '55', kakaopay: '' },
-      { role: '어머니', name: '이순희', bank: '6666', number: '66', kakaopay: '' }
+        { role: '신부', name: '김경란', bank: '농협은행', number: '302-1010-1922-91', kakaopay: '' },
+        { role: '아버지', name: '김봉식', bank: '국민은행', number: '570-24-0022-003', kakaopay: '' },
+        { role: '어머니', name: '이순희', bank: '국민은행', number: '571-01-0142-711', kakaopay: '' }
     ]
   },
 

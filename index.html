@@ -18,15 +18,16 @@
          ★ og:url 과 og:image 는 반드시 https:// 로 시작하는 전체 주소여야 합니다.
            "assets/images/cover.jpg" 같은 상대경로는 카톡에서 이미지가 안 뜹니다.
 
-         배포 후 아래 두 줄의 https://여기에-배포주소 부분을 실제 주소로 바꾸세요.
+         지금 값은 GitHub Pages 배포 주소입니다.
+         배포 위치를 옮기면 og:url 과 og:image 두 줄을 함께 바꿔야 합니다.
          ============================================================ -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="오원빈 ♥ 김경란 결혼합니다">
-    <meta property="og:description" content="2026년 11월 22일 일요일 오후 2시 · 제주 헤리스가든 1층 글라스홀">
-    <meta property="og:url" content="https://여기에-배포주소/">
-    <meta property="og:image" content="https://여기에-배포주소/assets/images/share.jpg">
-    <meta property="og:image:width" content="800">
-    <meta property="og:image:height" content="400">
+    <meta property="og:description" content="2026년 11월 22일 일요일 오후 2시 · 헤리티크 제주 1층 글라스홀">
+    <meta property="og:url" content="https://yoonbin.github.io/WB_Mobile_Invitation/">
+    <meta property="og:image" content="https://yoonbin.github.io/WB_Mobile_Invitation/assets/images/share.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
     <meta name="twitter:card" content="summary_large_image">
     <!-- 휴대폰 브라우저 주소창 색. 배경이 흰색이라 함께 흰색으로 맞춘다. -->
     <meta name="theme-color" content="#FFFFFF">
@@ -38,7 +39,7 @@
     <!-- ?v= 뒤 숫자는 캐시 번호입니다.
          내용을 고쳐 다시 올렸는데 하객 휴대폰에서 예전 내용이 그대로 보인다면,
          아래 세 곳(style.css / config.js / main.js)의 숫자를 1씩 올리세요. -->
-    <link rel="stylesheet" href="assets/css/style.css?v=21">
+    <link rel="stylesheet" href="assets/css/style.css?v=27">
 </head>
 <body>
 
@@ -159,13 +160,11 @@
       <em data-bind="wedding.hall"></em>
     </p>
 
-    <!-- 지도는 config 의 address 만으로 자동으로 뜬다(발급 키 없음).
-         핀이 엉뚱하면 config 의 lat/lng 를 채우면 좌표를 쓴다.
-         주소·좌표가 모두 없을 때만 아래 안내 문구가 남는다. -->
+    <!-- 네이버 지도. config 의 lat·lng·naverMapClientId 가 모두 있어야 뜬다.
+         하나라도 비면 아래 안내 문구가 무엇이 빠졌는지 알려준다.
+         길찾기 버튼들은 키 없이 언제나 동작한다. -->
     <div class="map" id="mapBox">
-      <div class="map__placeholder" id="mapPlaceholder">
-        <span>지도를 불러오지 못했습니다<br><code>config.js</code> 의 <code>address</code> 를 확인해 주세요</span>
-      </div>
+      <div class="map__placeholder" id="mapPlaceholder">지도를 준비하는 중입니다</div>
     </div>
 
     <p class="address">
@@ -211,6 +210,14 @@
       <span data-bind="groom.name"></span> · <span data-bind="bride.name"></span>
     </p>
     <button class="btn btn--ghost" type="button" id="shareBtn">청첩장 공유하기</button>
+
+    <p class="credit">
+        <span class="credit__copy">Copyright 2026. ohwonbin All Rights Reserved.</span>
+      <span class="credit__bgm">
+        배경음악
+        <a href="https://blog.naver.com/hae_mosu/224214506343" target="_blank" rel="noopener">해모수 블로그</a>
+      </span>
+    </p>
   </footer>
 
 </main>
@@ -259,7 +266,7 @@
 <!-- ============ 토스트 ============ -->
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="assets/js/config.js?v=21"></script>
-<script src="assets/js/main.js?v=21"></script>
+<script src="assets/js/config.js?v=27"></script>
+<script src="assets/js/main.js?v=27"></script>
 </body>
 </html>

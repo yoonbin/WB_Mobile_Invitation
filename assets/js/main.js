@@ -483,6 +483,9 @@
       var img = document.createElement('img');
       img.alt = '';
       img.loading = 'lazy';
+      // 디코드를 메인 스레드 밖으로 넘긴다. 12장을 한꺼번에 그릴 때
+      // 화면이 멈춘 듯한 느낌을 줄인다.
+      img.decoding = 'async';
       withFallback(img, file);
       btn.appendChild(img);
       btn.addEventListener('click', function () { openLightbox(idx); });
@@ -514,10 +517,17 @@
   }
   function renderLightbox() {
     var file = photos[lbIndex];
-    lbImg.removeAttribute('src');
+    // src 를 지우지 않고 바로 갈아끼운다. 지웠다 넣으면 캐시에 있는 사진도
+    // 다시 디코드해서 한 번 흰 화면이 됐다가 뜬다 — 그게 '느리다'의 정체였다.
     withFallback(lbImg, file);
     lbImg.alt = '사진 ' + (lbIndex + 1);
     lbCount.textContent = (lbIndex + 1) + ' / ' + photos.length;
+
+    // 좌우로 넘길 사진을 미리 받아 둔다. 넘기는 순간 기다릴 것이 없다.
+    [lbIndex + 1, lbIndex - 1].forEach(function (i) {
+      var f = photos[(i + photos.length) % photos.length];
+      if (f) { new Image().src = IMG_DIR + f; }
+    });
   }
   function moveLightbox(step) {
     lbIndex = (lbIndex + step + photos.length) % photos.length;
@@ -541,13 +551,32 @@
   });
   // 좌우 스와이프
   (function swipe() {
-    var x0 = null;
-    lb.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+    var x0 = null, y0 = null;
+
+    lb.addEventListener('touchstart', function (e) {
+      // 손가락이 둘 이상이면 확대·축소하려는 것이다. 스와이프로 세지 않는다.
+      // (핀치 중에 첫 손가락이 옆으로 꽤 움직여서 다음 사진으로 넘어가 버렸다)
+      if (e.touches.length > 1) { x0 = y0 = null; return; }
+      x0 = e.touches[0].clientX;
+      y0 = e.touches[0].clientY;
+    }, { passive: true });
+
+    // 도중에 손가락이 늘어나면(한 손가락으로 시작해 핀치로 바뀜) 그때도 취소한다.
+    lb.addEventListener('touchmove', function (e) {
+      if (e.touches.length > 1) { x0 = y0 = null; }
+    }, { passive: true });
+
     lb.addEventListener('touchend', function (e) {
       if (x0 === null) { return; }
-      var dx = e.changedTouches[0].clientX - x0;
-      if (Math.abs(dx) > 50) { moveLightbox(dx < 0 ? 1 : -1); }
-      x0 = null;
+      var t = e.changedTouches[0];
+      var dx = t.clientX - x0;
+      var dy = t.clientY - y0;
+      // 가로로 확실히 더 많이 움직였을 때만 사진을 넘긴다.
+      // 확대한 사진을 위아래로 훑는 동작이 넘김으로 오해되는 것도 막는다.
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        moveLightbox(dx < 0 ? 1 : -1);
+      }
+      x0 = y0 = null;
     });
   })();
 
@@ -583,34 +612,84 @@
 
        핀이 엉뚱한 곳에 찍히면 config 의 lat/lng 를 채운다 — 그러면 주소 대신
        좌표를 쓴다. 교정 수단은 이 하나로 충분하다. */
-    (function showMap() {
-      // 예식장 이름과 주소를 붙여 보내면 검색이 흔들린다("제주 헤리티크제주
-      // 제주특별자치도 제주시 한북로 154" 처럼). 주소만 보내는 쪽이 확실하다.
-      var place = hasXY ? (W.lat + ',' + W.lng) : (W.address || W.venue || '');
-      if (!place) { return; }   // 주소도 좌표도 없으면 안내 문구를 그대로 둔다
-
+    (function naverMap() {
+      var key = (W.naverMapClientId || '').trim();
       var box = $('#mapBox');
-      var f = document.createElement('iframe');
-      f.className = 'map__canvas';
-      f.title = name + ' 위치 지도';
-      f.loading = 'lazy';
-      f.referrerPolicy = 'no-referrer-when-downgrade';
-      f.setAttribute('allowfullscreen', '');
-      f.src = 'https://www.google.com/maps?q=' + encodeURIComponent(place) +
-              '&hl=ko&z=16&output=embed';
-      box.insertBefore(f, box.firstChild);
 
-      // 지도를 넣는 즉시 안내 문구를 치운다.
-      // onload 를 기다리지 않는 이유: 지도가 안 뜨는 경우 iframe 안에 구글이
-      // 자기 오류 화면을 보여주므로 우리 안내 문구가 겹칠 뿐이다.
-      $('#mapPlaceholder').hidden = true;
+      // 좌표와 Client ID 가 모두 있어야 지도를 띄운다.
+      // 하나라도 없으면 안내 문구를 그대로 두고 조용히 지나간다 —
+      // 지도가 없어도 아래 주소와 길찾기 버튼으로 찾아올 수 있다.
+      if (!hasXY || !key) {
+        $('#mapPlaceholder').textContent = key
+          ? 'config.js 의 lat · lng 를 채우면 지도가 나옵니다'
+          : 'config.js 의 naverMapClientId 를 채우면 지도가 나옵니다';
+        return;
+      }
 
-      // 자세히 보거나 길찾기는 네이버지도로 넘긴다(이 링크는 키가 필요 없다).
-      var a = link('https://map.naver.com/p/search/' + q, '네이버지도로 보기');
-      a.className = 'map__open';
-      a.target = '_blank';
-      a.rel = 'noopener';
-      box.appendChild(a);
+      var s = document.createElement('script');
+      // ncpKeyId: 2024년 이후 발급 키. 예전에 발급한 키라면 ncpClientId 로 바꿔야 한다.
+      s.src = 'https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=' + encodeURIComponent(key);
+      s.onerror = function () {
+        $('#mapPlaceholder').textContent = '지도를 불러오지 못했습니다 (네트워크 확인)';
+      };
+      s.onload = function () {
+        if (!window.naver || !window.naver.maps) {
+          $('#mapPlaceholder').textContent = '지도 인증에 실패했습니다 (Client ID·서비스 URL 확인)';
+          return;
+        }
+        var canvas = document.createElement('div');
+        canvas.className = 'map__canvas';
+        box.insertBefore(canvas, box.firstChild);
+        $('#mapPlaceholder').hidden = true;
+
+        var at = new window.naver.maps.LatLng(Number(W.lat), Number(W.lng));
+        var map = new window.naver.maps.Map(canvas, {
+          center: at,
+          zoom: 16,
+          // 주변을 둘러볼 수 있게 이동·확대를 연다.
+          draggable: true,
+          pinchZoom: true,
+          keyboardShortcuts: true,
+          zoomControl: true,
+          zoomControlOptions: { position: window.naver.maps.Position.TOP_RIGHT },
+          // 마우스 휠만 잠근다. 페이지를 굴려 내려오다 포인터가 지도에 걸리면
+          // 스크롤이 지도 확대로 먹혀서 페이지가 멈춘 것처럼 보인다.
+          scrollWheel: false,
+          scaleControl: false,
+          mapDataControl: false
+        });
+
+        // 마커: 빨간 핀 안에 하트, 아래에 예식장 이름.
+        // 좌표가 가리키는 지점은 핀의 뾰족한 끝(anchor 32,44)이다.
+        new window.naver.maps.Marker({
+          position: at,
+          map: map,
+          title: name,
+          icon: {
+            content:
+              '<div class="mappin">' +
+                '<svg class="mappin__pin" viewBox="0 0 64 88" aria-hidden="true" focusable="false">' +
+                  '<path fill="#E23B47" d="M32 0C14.3 0 0 14.3 0 32c0 21.3 32 56 32 56s32-34.7 32-56C64 14.3 49.7 0 32 0z"/>' +
+                  '<path fill="#FFFFFF" d="M32 48.6l-2.6-2.4C22.1 39.6 17 34.9 17 29.2c0-4.6 3.6-8.2 8.2-8.2 2.6 0 5.1 1.2 6.8 3.1 1.7-1.9 4.2-3.1 6.8-3.1 4.6 0 8.2 3.6 8.2 8.2 0 5.7-5.1 10.4-12.4 17l-2.6 2.4z"/>' +
+                '</svg>' +
+                // HTML 문자열로 넘기는 자리라 꺾쇠·앰퍼샌드를 걷어낸다.
+                // 홀 이름까지 붙이면 길어서 예식장 이름만 쓴다.
+                '<span class="mappin__label">' +
+                  String(W.venue || '').replace(/[<>&"]/g, '') +
+                '</span>' +
+              '</div>',
+            anchor: new window.naver.maps.Point(32, 44)
+          }
+        });
+
+        // 자세히 보거나 길찾기는 네이버지도 앱·웹으로 넘긴다.
+        var a = link('https://map.naver.com/p/search/' + q, '네이버지도로 보기');
+        a.className = 'map__open';
+        a.target = '_blank';
+        a.rel = 'noopener';
+        box.appendChild(a);
+      };
+      document.head.appendChild(s);
     })();
 
     var t = $('#transport');
@@ -864,13 +943,22 @@
       err.hidden = true;
       var submit = form.querySelector('button[type="submit"]');
       submit.disabled = true;
+      // 구글 앱스 스크립트는 처음 깨어날 때 몇 초가 걸린다. 그건 줄일 수 없으니
+      // 기다리는 중이라는 것만 확실히 보여 준다. 아무 반응이 없으면 하객이
+      // 버튼을 다시 누른다.
+      submit.textContent = '보내는 중…';
 
       var data = new FormData(form);
       var token = newToken();
+      var entry = {
+        name: (data.get('name') || '').trim(),
+        message: (data.get('message') || '').trim()
+      };
+
       api({
         action: 'guestbook',
-        name: (data.get('name') || '').trim(),
-        message: (data.get('message') || '').trim(),
+        name: entry.name,
+        message: entry.message,
         token: token
       }).then(function (res) {
         if (!res || !res.ok) { throw new Error(res && res.error || 'FAIL'); }
@@ -879,13 +967,25 @@
         closeSheet($('#gbSheet'));
         form.reset();
         toast('축하 메시지를 남겼습니다. 감사합니다.');
-        load();
+
+        // 목록을 다시 받아오지 않고 방금 쓴 글을 바로 얹는다.
+        // 재조회는 앱스 스크립트를 한 번 더 깨우는 일이라 그만큼 더 기다리게 된다.
+        items.unshift({
+          id: res.id,
+          createdAt: new Date().toISOString(),
+          name: entry.name,
+          message: entry.message
+        });
+        render();
       }).catch(function (e2) {
         err.hidden = false;
         err.textContent = e2.message === 'NO_ENDPOINT'
           ? '아직 저장 기능이 연결되지 않았습니다. (gasUrl 설정 필요)'
           : '저장에 실패했습니다. 잠시 후 다시 시도해 주세요.';
-      }).then(function () { submit.disabled = false; });
+      }).then(function () {
+        submit.disabled = false;
+        submit.textContent = '남기기';
+      });
     });
 
     load();

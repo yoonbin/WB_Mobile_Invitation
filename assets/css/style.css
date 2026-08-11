@@ -70,8 +70,10 @@
     --body: var(--display);
     --latin: var(--display);
     --emph: var(--display);
-    --page: 460px;
-    --gut: 26px;
+    /* rem 으로 둔다. 글자를 키우면 종이 폭과 좌우 여백도 같은 비율로 커져
+       글자만 커지고 답답해지는 일이 없다. */
+    --page: 28.75rem;               /* 460px 기준 */
+    --gut: 1.625rem;                /* 26px 기준 */
     --radius: 2px;
     --ease: cubic-bezier(.22, .61, .36, 1);
 }
@@ -79,6 +81,10 @@
 /* ---------- 리셋 ---------- */
 *, *::before, *::after { box-sizing: border-box; }
 html {
+  /* 전체 글자 크기의 기준. 브라우저 기본 16px 에서 1px 올렸다.
+     이 파일의 크기 값은 거의 다 rem 이라 이 한 줄로 화면 전체가 같은 비율로 커진다.
+     % 로 두는 이유: px 로 고정하면 하객이 브라우저에서 글자를 키워도 반영되지 않는다. */
+  font-size: 106.25%;             /* 16px -> 17px */
   -webkit-text-size-adjust: 100%;
   /* '맨 위로 / 맨 아래로' 버튼이 이 한 줄로 부드럽게 움직인다.
      자바스크립트 없이 <a href="#..."> 만으로 동작한다. */
@@ -106,6 +112,10 @@ img {
   -webkit-user-select: none;
   user-select: none;
   -webkit-user-drag: none;
+  /* 안드로이드 크롬은 -webkit-touch-callout 을 무시한다. 이미지가 아예
+     터치·클릭 대상이 아니게 만들면 '이미지 저장' 메뉴가 뜨지 않는다.
+     클릭은 이미지를 감싼 버튼·오버레이가 대신 받으므로 동작은 그대로다. */
+  pointer-events: none;
 }
 button { font: inherit; color: inherit; cursor: pointer; }
 a { color: inherit; }
@@ -262,14 +272,15 @@ b { font-weight: 400; font-variant-numeric: tabular-nums; }
    .eyebrow 규칙도 함께 지웠다.) */
 
 /* 강조 문구 — 핑크 + 이랜드 초이스체.
-   24px 은 임의로 키운 게 아니다. WCAG 는 24px 이상을 '큰 글자'로 보고 대비 기준을
-   4.5:1 에서 3:1 로 내려주는데, 연한 봄 핑크는 그 3:1 구간에서만 살아남는다.
-   여기서 크기를 줄이면 핑크를 진하게 바꿔야 한다. */
+   크기는 임의로 정한 게 아니다. WCAG 는 '큰 글자'(굵은 글씨 18.66px 이상)에
+   대비 기준을 4.5:1 에서 3:1 로 내려주고, 연한 봄 핑크는 그 3:1 구간에서만
+   살아남는다. 1.3125rem × 17px = 약 22.3px 이고 font-weight:700 이므로
+   아직 '큰 글자' 안이다. 여기서 더 줄이면 핑크를 진하게 바꿔야 한다. */
 .section__title {
   margin: 0 0 28px;
   font-family: var(--emph);
   font-weight: 700;
-  font-size: 1.5rem;
+  font-size: 1.3125rem;
   letter-spacing: .06em;
   color: var(--pink);
   /* 한글은 기본값이 글자 단위 줄바꿈이라 좁은 화면에서 '초대합니 / 다' 로 끊긴다.
@@ -513,8 +524,10 @@ b { font-weight: 400; font-variant-numeric: tabular-nums; }
    아래 절반에서는 글자를 위로 50% 밀어 올린다.
    ============================================================= */
 .flip {
-  --card-w: 46px;
-  --card-h: 52px;
+  /* rem 이라 글자와 함께 커진다. px 로 두면 카드 크기는 그대로인데
+     안의 숫자만 커져서 카드를 넘친다. */
+  --card-w: 2.875rem;             /* 46px 기준 */
+  --card-h: 3.25rem;              /* 52px 기준 */
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -603,7 +616,7 @@ b { font-weight: 400; font-variant-numeric: tabular-nums; }
 }
 
 @media (max-width: 359px) {
-  .flip { --card-w: 40px; --card-h: 46px; gap: 7px; }
+  .flip { --card-w: 2.5rem; --card-h: 2.875rem; gap: 7px; }
   .flip__card { font-size: 1.375rem; }
 }
 
@@ -665,6 +678,35 @@ b { font-weight: 400; font-variant-numeric: tabular-nums; }
   border: 0;
   display: block;
 }
+/* 지도 마커 — 빨간 핀 + 하트, 아래에 예식장 이름.
+   컨테이너 크기는 핀에만 맞춘다. 라벨을 흐름에 넣으면 라벨 길이에 따라
+   컨테이너 폭이 변해서 네이버에 넘긴 anchor(32,44)가 어긋난다. */
+.mappin { position: relative; width: 32px; height: 44px; }
+.mappin__pin {
+  display: block;
+  width: 32px;
+  height: 44px;
+  filter: drop-shadow(0 2px 3px rgba(35, 37, 32, .35));
+}
+.mappin__label {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--paper);
+  box-shadow: 0 1px 4px rgba(35, 37, 32, .28);
+  font-family: var(--emph);
+  font-weight: 700;
+  font-size: 0.6875rem;
+  letter-spacing: .01em;
+  line-height: 1.5;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
 /* 지도를 크게 보러 나가는 링크 — 지도 위 오른쪽 아래에 얹는다 */
 .map__open {
   position: absolute;
@@ -876,6 +918,18 @@ b { font-weight: 400; font-variant-numeric: tabular-nums; }
   color: var(--forest);
 }
 
+/* 맨 아래 저작권·출처 */
+.credit {
+  margin: 34px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.6875rem;
+  letter-spacing: .02em;
+  color: var(--ink-faint);
+}
+.credit a { color: inherit; }
+
 /* =============================================================
    라이트박스
    ============================================================= */
@@ -887,6 +941,10 @@ b { font-weight: 400; font-variant-numeric: tabular-nums; }
   align-items: center;
   justify-content: center;
   background: rgba(26, 36, 29, .96);
+  /* 두 손가락 확대는 브라우저에 넘기고(사진을 크게 보려고 여는 화면이다),
+     한 손가락 좌우 넘김은 JS 가 처리한다.
+     사진(img)은 pointer-events: none 이라 터치가 여기까지 올라온다. */
+  touch-action: pinch-zoom;
 }
 .lightbox__img {
   max-width: 92vw;
@@ -1095,8 +1153,10 @@ textarea.input { resize: vertical; line-height: 1.7; }
   border-left: 1.5px solid var(--forest);
   border-bottom: 1.5px solid var(--forest);
 }
-.jump__btn[href="#cover"] span { transform: rotate(135deg) translate(-1px, -1px); }
-.jump__btn[href="#end"] span { transform: rotate(-45deg) translate(-1px, -1px); }
+/* 회전만 한다. translate 를 뒤에 붙이면 회전된 축(45°)을 따라 밀려서
+   두 버튼의 좌우 여백이 서로 반대로 어긋난다(17.8px 대 14.9px). */
+.jump__btn[href="#cover"] span { transform: rotate(135deg); }
+.jump__btn[href="#end"] span { transform: rotate(-45deg); }
 
 .bgm-toggle__bars { display: flex; align-items: flex-end; gap: 2px; height: 13px; }
 .bgm-toggle__bars i { width: 2px; height: 4px; background: var(--forest); }
@@ -1160,6 +1220,6 @@ textarea.input { resize: vertical; line-height: 1.7; }
 
 /* ---------- 아주 작은 화면 ---------- */
 @media (max-width: 359px) {
-  :root { --gut: 20px; }
+  :root { --gut: 1.25rem; }
   .cover__names { font-size: 1.625rem; }
 }

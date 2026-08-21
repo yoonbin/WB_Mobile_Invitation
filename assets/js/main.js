@@ -1082,7 +1082,7 @@
     }
 
     btn.addEventListener('click', function () {
-      var url = location.href;
+      var url = og('og:url', location.href);
       var title = og('og:title', (C.meta && C.meta.title) || document.title);
       var desc = og('og:description', (C.meta && C.meta.description) || '');
       var image = og('og:image', '');

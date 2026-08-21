@@ -159,6 +159,50 @@
     return s;
   }
 
+  /* =============================================================
+     자기소개
+     -------------------------------------------------------------
+     사진도 소개글도 없는 사람은 빠지고, 아무도 남지 않으면 섹션이 숨겨진 채로 있다.
+     ============================================================= */
+  (function about() {
+    var A = C.about || {};
+    var people = (A.people || []).filter(function (p) {
+      return p && (p.image || (p.lines || []).length);
+    });
+    if (!people.length) { return; }
+
+    if (A.title) { $('#aboutTitle').textContent = A.title; }
+    var wrap = $('#aboutList');
+
+    people.forEach(function (p) {
+      var card = document.createElement('div');
+      card.className = 'about__card';
+
+      if (p.image) {
+        var frame = document.createElement('div');
+        frame.className = 'about__frame';
+        var img = document.createElement('img');
+        img.alt = (p.name || '') + ' 어릴 때 사진';
+        img.loading = 'lazy';
+        // 없어도 되는 사진이라 자리표시로 대체하지 않고 조용히 자리를 비운다
+        img.onerror = function () { frame.hidden = true; };
+        img.src = IMG_DIR + p.image;
+        frame.appendChild(img);
+        card.appendChild(frame);
+      }
+      if (p.name) { card.appendChild(span('about__name', p.name)); }
+      if ((p.lines || []).length) {
+        var body = document.createElement('p');
+        body.className = 'prose prose--sm';
+        appendLines(body, p.lines);
+        card.appendChild(body);
+      }
+      wrap.appendChild(card);
+    });
+
+    $('#about').hidden = false;
+  })();
+
   /* ---------- 연락처 시트 ---------- */
   (function buildContacts() {
     var list = $('#contactList');
@@ -172,11 +216,11 @@
     });
     var shown = people.filter(function (x) { return x[2]; });
 
+    // 연락처가 하나도 없으면 '연락하기' 버튼 자체를 감춘다.
+    // 눌러도 빈 시트만 뜨는 버튼을 남겨 둘 이유가 없다.
     if (!shown.length) {
-      var none = document.createElement('p');
-      none.className = 'prose prose--sm';
-      none.textContent = '등록된 연락처가 없습니다.';
-      list.appendChild(none);
+      var open = $('.contact-open');
+      if (open) { open.hidden = true; }
       return;
     }
 
@@ -325,6 +369,18 @@
           ? '오늘은 저희가 결혼하는 날입니다'
           : '함께해 주셔서 감사합니다';
         return false;   // 더 셀 것이 없다 — 타이머를 멈춘다
+      }
+
+      // 남은 날짜가 0(D-day)이 되면 플립 카운터를 감춘다.
+      // 남은 날짜는 24시간 단위라 예식 전날 저녁에도 0 이 된다 —
+      // 그래서 문구는 '오늘/내일'을 달력 날짜로 갈라서 정한다.
+      if (Math.floor(sec / 86400) === 0) {
+        var isToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() === weddingDay.getTime();
+        $('#flip').hidden = true;
+        dd.textContent = isToday ? '오늘은 저희가 결혼하는 날입니다' : '내일 저희가 결혼합니다';
+        // 전날이면 자정에 문구가 '오늘'로 바뀌어야 하니 타이머는 계속 둔다.
+        if (isToday) { return false; }
+        return;
       }
 
       var parts = [
@@ -892,7 +948,7 @@
           del.type = 'button';
           del.className = 'gb-item__del';
           del.textContent = '삭제';
-          del.addEventListener('click', function () { removeEntry(it.id); });
+          del.addEventListener('click', function () { removeEntry(it.id, del); });
           li.appendChild(del);
         }
         listEl.appendChild(li);
@@ -906,10 +962,17 @@
       return d.getFullYear() + '.' + pad(d.getMonth() + 1) + '.' + pad(d.getDate());
     }
 
-    function removeEntry(id) {
+    function removeEntry(id, btn) {
       var token = mine()[id];
       if (!token) { return; }
       if (!window.confirm('남기신 축하 메시지를 지울까요?')) { return; }
+
+      // 앱스 스크립트가 깨어나는 데 몇 초 걸린다. 그동안 아무 반응이 없으면
+      // 고장난 줄 알고 다시 누르게 된다 — 버튼을 잠그고 상태를 보여 준다.
+      // 성공하면 목록을 다시 그리면서 이 버튼이 사라지므로 되돌릴 필요가 없다.
+      if (btn) { btn.disabled = true; btn.textContent = '삭제 중…'; }
+      toast('삭제하는 중입니다…');
+
       api({ action: 'delete', id: id, token: token }).then(function (res) {
         if (!res || !res.ok) { throw new Error(res && res.error || 'FAIL'); }
         forget(id);
@@ -919,6 +982,7 @@
         // 서버에 이미 없는 글이면 이 기기의 기록도 정리한다
         if (e.message === 'NOT_FOUND') { forget(id); load(); }
         toast('삭제하지 못했습니다');
+        if (btn) { btn.disabled = false; btn.textContent = '삭제'; }
       });
     }
 
@@ -1036,8 +1100,17 @@
         });
         return;
       }
+      /* 공유 시트(Web Share API).
+         안드로이드 카카오톡·인스타 등 '인앱 브라우저'에는 이 기능이 없어서
+         곧바로 아래 링크 복사로 내려간다(아이폰은 카톡 안에서도 사파리 엔진을 써서 뜬다).
+         인앱 브라우저에서도 공유 창을 띄우려면 위쪽 카카오 공유를 써야 하고,
+         그건 config.js 의 kakao.appKey 를 채워야 동작한다. */
       if (navigator.share) {
-        navigator.share({ title: title, text: desc, url: url }).catch(function () {});
+        navigator.share({ title: title, text: desc, url: url }).catch(function (e) {
+          // 하객이 공유 창을 닫은 것(AbortError)은 실패가 아니다 — 아무것도 하지 않는다.
+          // 그 밖의 실패(공유 시트를 못 띄우는 환경)는 링크 복사로 대신한다.
+          if (!e || e.name !== 'AbortError') { copy(url, '청첩장 주소를 복사했습니다'); }
+        });
         return;
       }
       copy(url, '청첩장 주소를 복사했습니다');
@@ -1053,7 +1126,7 @@
 
     var audio = new Audio('assets/audio/' + B.file);
     audio.loop = true;
-    audio.volume = .5;
+    audio.volume = 1;
 
     var btn = $('#bgmToggle');
     btn.hidden = false;

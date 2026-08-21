@@ -84,7 +84,7 @@ html {
   /* 전체 글자 크기의 기준. 브라우저 기본 16px 에서 1px 올렸다.
      이 파일의 크기 값은 거의 다 rem 이라 이 한 줄로 화면 전체가 같은 비율로 커진다.
      % 로 두는 이유: px 로 고정하면 하객이 브라우저에서 글자를 키워도 반영되지 않는다. */
-  font-size: 106.25%;             /* 16px -> 17px */
+  font-size: 130%;             /* 16px -> 17px */
   -webkit-text-size-adjust: 100%;
   /* '맨 위로 / 맨 아래로' 버튼이 이 한 줄로 부드럽게 움직인다.
      자바스크립트 없이 <a href="#..."> 만으로 동작한다. */
@@ -412,6 +412,39 @@ b { font-weight: 400; font-variant-numeric: tabular-nums; }
 .family__role { text-align: center; color: var(--ink-soft); white-space: nowrap; }
 .family__child { text-align: left; font-size: 1.0625rem; letter-spacing: .12em; }
 .contact-open { margin-top: 30px; }
+
+/* =============================================================
+   자기소개 — 앨범에 끼운 듯한 원형 사진
+   -------------------------------------------------------------
+   흰 여백(padding) + 억새색 얇은 테 + 옅은 그림자 = 앨범 대지에 올린 원형 사진.
+   사진은 정사각형이 아니어도 object-fit: cover 로 가운데를 채워 잘린다.
+   ============================================================= */
+.about { display: grid; gap: 40px; }
+.about__frame {
+  width: 8.25rem;                 /* 132px 기준 — '작게' 넣는 사진 */
+  height: 8.25rem;
+  margin: 0 auto 14px;
+  padding: 5px;
+  border: 1px solid var(--gold);
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: 0 6px 18px rgba(46, 64, 52, .10);
+}
+.about__frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.about__name {
+  display: block;
+  margin-bottom: 10px;
+  font-family: var(--display);
+  font-size: 1rem;
+  letter-spacing: .12em;
+  color: var(--forest);
+}
 
 /* =============================================================
    달력
@@ -887,6 +920,8 @@ b { font-weight: 400; font-variant-numeric: tabular-nums; }
   color: var(--ink-faint);
   text-decoration: underline;
 }
+/* 삭제 요청을 보내는 동안 — 다시 누르지 못하게 잠긴 상태 */
+.gb-item__del:disabled { text-decoration: none; opacity: .6; }
 .gb-item__del::after {
   content: '';
   position: absolute;

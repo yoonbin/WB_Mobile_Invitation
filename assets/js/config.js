@@ -75,29 +75,49 @@ window.CONFIG = {
     ]
   },
 
-  /* ---------- 4. 신랑 · 신부 · 혼주 ---------- */ 
+  /* ---------- 3-1. 자기소개 (선택) ---------- */
+  /* image·lines 를 모두 비우면 그 사람은 빠지고, 둘 다 비면 섹션 자체가 숨겨집니다.
+     사진은 assets/images/ 폴더에 넣고 파일명만 적으세요(원형으로 잘려 나옵니다.
+     정사각형에 가까운 사진일 때 가장 예쁩니다). */
+  about: {
+    title: '',
+    people: [
+      {
+        name: '',
+            image: '',                  // 예: 'about-groom.jpg' (어릴 때 사진)
+        lines: []
+      },
+      {
+        name: '',
+          image: '',
+        lines: []
+      }
+    ]
+  },
+
+  /* ---------- 4. 신랑 · 신부 · 혼주 ---------- */
   /* 이름은 성까지 적으세요. 표지·마무리 서명·연락처는 이 값을 그대로 쓰고,
      혼주 소개 줄("오성택 · 이해정의 아들 원빈")에서는 성이 자동으로 빠집니다. */
   groom: {
     name: '오원빈',
     role: '아들',
-    tel: '010-7551-0864',                        // 예: '010-0000-0000' — 비우면 연락처 버튼 숨김
-    father: { name: '오성택', tel: '010-8014-3327' },
-    mother: { name: '이해정', tel: '010-9042-1679' }
+    tel: '',                        // 예: '010-0000-0000' — 비우면 연락처 버튼 숨김
+    father: { name: '오성택', tel: '' },
+    mother: { name: '이해정', tel: '' }
   },
   bride: {
     name: '김경란',
     role: '딸',
-    tel: '010-4346-8508',
-    father: { name: '김봉식', tel: '010-5555-5555' },
-    mother: { name: '이순희', tel: '010-6666-6666' }
+    tel: '',
+    father: { name: '김봉식', tel: '' },
+    mother: { name: '이순희', tel: '' }
   },
 
   /* ---------- 5. 달력 위 사진 (선택) ---------- */
   calendar: {
     // 예식 안내 섹션의 달력 위에 넣을 사진 파일명. assets/images/ 폴더에 두세요.
     // 비워두면 사진 없이 달력만 나옵니다.
-      image: 'gallery-09.jpg'         // 예: 'calendar.jpg'
+      image: 'calendar.jpg'         // 예: 'calendar.jpg'
   },
 
   /* ---------- 6. 갤러리 ---------- */
@@ -113,7 +133,8 @@ window.CONFIG = {
       'gallery-01.jpg', 'gallery-02.jpg', 'gallery-03.jpg',
       'gallery-04.jpg', 'gallery-05.jpg', 'gallery-06.jpg',
       'gallery-07.jpg', 'gallery-08.jpg', 'gallery-09.jpg',
-      'gallery-10.jpg', 'gallery-11.jpg', 'gallery-12.jpg'
+      'gallery-10.jpg', 'gallery-11.jpg', 'gallery-12.jpg',
+      'gallery-13.jpg', 'gallery-14.jpg', 'gallery-15.jpg'
     ]
   },
 

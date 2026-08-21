@@ -1082,9 +1082,7 @@
     }
 
     btn.addEventListener('click', function () {
-      // 공유되는 주소도 og:url 을 기준으로 삼는다. 태그가 없을 때만 현재 주소를 쓴다.
-      // (현재 주소에는 ?v= 같은 군더더기가 붙을 수 있어 미리보기 주소와 어긋난다.)
-      var url = og('og:url', location.href);
+      var url = location.href;
       var title = og('og:title', (C.meta && C.meta.title) || document.title);
       var desc = og('og:description', (C.meta && C.meta.description) || '');
       var image = og('og:image', '');
@@ -1115,9 +1113,7 @@
         });
         return;
       }
-      // 카카오 공유도, 공유 시트도 없는 환경(갤럭시 인앱 브라우저 등).
-      // 공유된 것처럼 말하지 말고 '주소만 복사됐다'는 사실을 그대로 알린다.
-      copy(url, '이 브라우저에서는 공유 창을 열 수 없어 청첩장 주소만 복사했습니다');
+      copy(url, '청첩장 주소를 복사했습니다');
     });
   })();
 

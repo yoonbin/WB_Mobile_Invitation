@@ -177,5 +177,5 @@ window.CONFIG = {
   /* ---------- 10. 카카오톡 공유 (선택) ---------- */
   /* 앱 키가 없으면 '링크 복사'로 자동 대체됩니다.
      발급: developers.kakao.com → 앱 생성 → JavaScript 키 → 플랫폼에 배포 도메인 등록 */
-  kakao: { appKey: '' }
+    kakao: { appKey: 'e6b2a87e4f99064126968b8e704e293b' }
 };
